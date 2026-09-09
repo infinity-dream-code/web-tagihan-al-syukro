@@ -1,15 +1,18 @@
 <?php
 require_once __DIR__ . '/../models/Tagihan.php';
 require_once __DIR__ . '/../models/MultiAkun.php';
+require_once __DIR__ . '/../models/LoginToken.php';
 require_once __DIR__ . '/../helpers/response.php';
 
 class TagihanController {
    private $tagihan;
    private $multiAkun;
+   private $loginToken;
 
    public function __construct() {
         $this->tagihan = new Tagihan();
         $this->multiAkun = new MultiAkun();
+        $this->loginToken = new LoginToken();
     }
 
     private function readJsonInput()
@@ -260,6 +263,68 @@ public function getTahunAkademik() {
                 return;
             }
             jsonResponse(false, 'Gagal menghapus multi akun: ' . $msg);
+        }
+    }
+
+    /**
+     * Buat token login sekali pakai (dipakai dashboard admin).
+     * Body JSON: { "no_cust": "...", "expires_hours": 24, "created_by": "...", "tahun_akademik": "all" }
+     */
+    public function tokenBuat()
+    {
+        $input = $this->readJsonInput();
+        $noCust = $input['no_cust'] ?? $input['va'] ?? null;
+        $expiresHours = $input['expires_hours'] ?? 24;
+        $createdBy = $input['created_by'] ?? null;
+        $tahun = $input['tahun_akademik'] ?? 'all';
+        $custid = $input['custid'] ?? null;
+
+        if (empty($noCust)) {
+            jsonResponse(false, 'no_cust wajib diisi');
+            return;
+        }
+
+        try {
+            $created = $this->loginToken->create($noCust, $expiresHours, $createdBy, $tahun, $custid);
+            jsonResponse(true, 'Token login berhasil dibuat', $created);
+        } catch (InvalidArgumentException $e) {
+            jsonResponse(false, $e->getMessage());
+        } catch (Exception $e) {
+            $msg = $e->getMessage();
+            if (stripos($msg, 'sm_user_credential_link') !== false || stripos($msg, "doesn't exist") !== false) {
+                jsonResponse(false, 'Tabel sm_user_credential_link belum ada di database WS. Jalankan ws/sql/sm_user_credential_link.sql');
+                return;
+            }
+            jsonResponse(false, 'Gagal membuat token login: ' . $msg);
+        }
+    }
+
+    /**
+     * Tukar token URL menjadi sesi tagihan (tanpa password).
+     * Body JSON: { "token": "..." }
+     */
+    public function tokenLogin()
+    {
+        $input = $this->readJsonInput();
+        $token = $input['token'] ?? null;
+
+        if (empty($token)) {
+            jsonResponse(false, 'token wajib diisi');
+            return;
+        }
+
+        try {
+            $data = $this->loginToken->consume($token);
+            jsonResponse(true, 'Data ditemukan', $data);
+        } catch (InvalidArgumentException $e) {
+            jsonResponse(false, $e->getMessage());
+        } catch (Exception $e) {
+            $msg = $e->getMessage();
+            if (stripos($msg, 'sm_user_credential_link') !== false || stripos($msg, "doesn't exist") !== false) {
+                jsonResponse(false, 'Tabel sm_user_credential_link belum ada di database WS. Jalankan ws/sql/sm_user_credential_link.sql');
+                return;
+            }
+            jsonResponse(false, 'Gagal login dengan token: ' . $msg);
         }
     }
 

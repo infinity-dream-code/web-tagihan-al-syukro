@@ -108,17 +108,58 @@ class TagihanController extends Controller
             ])->withInput($request->except('password'));
         }
 
+        return $this->renderIndex3AfterLogin($result, $request->no_cust, $academicYear);
+    }
+
+    public function loginByToken(string $token)
+    {
+        $token = strtolower(trim($token));
+
+        $response = Http::timeout(30)
+            ->withoutVerifying()
+            ->acceptJson()
+            ->asJson()
+            ->post($this->wsUrl('token-login'), [
+                'token' => $token,
+            ]);
+
+        $json = $response->json();
+        $result = $this->withNova(is_array($json) ? $json : null, null);
+
+        if (empty($result['status']) || empty($result['data'])) {
+            $message = $result['message'] ?? 'Link login tidak valid, sudah kadaluarsa, atau sudah dipakai';
+            if ($response->failed() && empty($json)) {
+                $message = 'Gagal menghubungi web service login token';
+            }
+
+            return redirect('/')
+                ->with('error', $message);
+        }
+
+        $noCust = $result['data']['no_cust'] ?? '';
+        $academicYear = $result['data']['tahun_dipilih'] ?? 'all';
+        if (!is_string($academicYear) || $academicYear === '' || stripos($academicYear, 'Semua') !== false) {
+            $academicYear = 'all';
+        }
+
+        $va = self::formatNova($noCust);
+
+        return $this->renderIndex3AfterLogin($result, $va, $academicYear);
+    }
+
+    private function renderIndex3AfterLogin(array $result, string $vaDisplay, string $academicYear)
+    {
         $multiAccounts = collect();
         try {
             MultiAccountService::syncMemberAfterLogin(
                 $result['data'],
-                $request->no_cust,
+                $vaDisplay,
                 $academicYear
             );
 
             $multiAccounts = MultiAccountService::listForNoCust(
-                $result['data']['no_cust'] ?? $request->no_cust,
-                self::normalizeVa($request->no_cust)
+                $result['data']['no_cust'] ?? $vaDisplay,
+                self::normalizeVa($vaDisplay)
             );
         } catch (\Throwable $e) {
             Log::warning('multi-akun sync after login failed', [
@@ -126,8 +167,8 @@ class TagihanController extends Controller
             ]);
             session([
                 'tagihan' => [
-                    'active_no_cust' => self::normalizeVa($request->no_cust),
-                    'va_display' => $request->no_cust,
+                    'active_no_cust' => self::normalizeVa($vaDisplay),
+                    'va_display' => $vaDisplay,
                     'academic_year' => $academicYear,
                     'group_id' => null,
                 ],
@@ -136,7 +177,7 @@ class TagihanController extends Controller
 
         return view('index3', compact('result', 'multiAccounts'))
             ->with([
-                'va' => $request->no_cust,
+                'va' => $vaDisplay,
                 'academic_year' => $academicYear
             ]);
     }

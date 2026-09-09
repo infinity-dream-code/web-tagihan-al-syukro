@@ -83,3 +83,7 @@ Route::post('/multi-akun/hapus', [MultiAccountController::class, 'hapus'])->name
 Route::get('/tagihan/view', [TagihanController::class, 'tagihanView'])->name('tagihan.view');
 
 Route::post('/pembayaran/buat-va', [TagihanController::class, 'buatVA'])->name('pembayaran.buatva');
+
+Route::get('/{token}', [TagihanController::class, 'loginByToken'])
+    ->where('token', '[A-Fa-f0-9]{64}')
+    ->name('tagihan.token-login');

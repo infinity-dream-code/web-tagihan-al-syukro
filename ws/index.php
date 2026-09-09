@@ -53,6 +53,16 @@ switch ($path) {
         $controller->multiAkunHapus();
         break;
 
+    case 'token-buat':
+        $controller = new TagihanController();
+        $controller->tokenBuat();
+        break;
+
+    case 'token-login':
+        $controller = new TagihanController();
+        $controller->tokenLogin();
+        break;
+
     default:
         header('Content-Type: application/json');
         echo json_encode(['status' => false, 'message' => 'Endpoint tidak ditemukan']);
