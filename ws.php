@@ -370,7 +370,6 @@ class Tagihan
         }
 
         $custid = $siswa['id'];
-        $tagihanAktif = $this->attachAktifDetails($custid, $tagihanAktif);
         $lunasItems = $this->attachLunasDetails($custid, $lunasItems);
 
         $siswa['tahun_dipilih'] = $tahun_akademik ?: 'Semua Tahun Akademik';

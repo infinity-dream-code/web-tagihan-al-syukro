@@ -408,6 +408,22 @@ h1{font-size:1.15rem}
           </div>
         </div>
         <div id="tagihanInfo" class="tbl-info" style="margin-bottom:.75rem"></div>
+        @php
+          $fmtPeriode = static function ($periode) {
+              $raw = trim((string) ($periode ?? ''));
+              if ($raw === '' || $raw === '-') {
+                  return '-';
+              }
+              if (preg_match('/^(\d{4})[-]?(\d{2})/', $raw, $m)) {
+                  $bulan = (int) $m[2];
+                  $nama = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'Mei',6=>'Jun',7=>'Jul',8=>'Agu',9=>'Sep',10=>'Okt',11=>'Nov',12=>'Des'];
+                  if (isset($nama[$bulan])) {
+                      return $nama[$bulan] . ' ' . $m[1];
+                  }
+              }
+              return $raw;
+          };
+        @endphp
         <div class="tbl-wrap">
           <table>
             <thead>
@@ -415,11 +431,11 @@ h1{font-size:1.15rem}
                 <th><input type="checkbox" class="chk" id="selectAll" onclick="toggleSelectAll(this)" aria-label="Pilih semua"></th>
                 <th>No</th>
                 <th>Nama tagihan</th>
+                <th>Periode</th>
                 <th>Nominal</th>
                 <th>Sudah dibayar</th>
                 <th>Dapat dicicil</th>
                 <th>Bayar</th>
-                <th>Detail</th>
                 <th>Exp Date</th>
               </tr>
             </thead>
@@ -441,6 +457,7 @@ h1{font-size:1.15rem}
                 </td>
                 <td>{{ $i+1 }}</td>
                 <td>{{ ucwords(str_replace('_', ' ', strtolower($tagih['nama_tagihan']))) }}</td>
+                <td>{{ $fmtPeriode($tagih['periode'] ?? null) }}</td>
                 <td>Rp {{ number_format($totalTagih, 0, ',', '.') }}</td>
                 <td>Rp {{ number_format($sudahBayar, 0, ',', '.') }}</td>
                 <td>
@@ -453,7 +470,6 @@ h1{font-size:1.15rem}
                 <td>
                   <input type="number" class="pay-input bayar-input" data-index="{{ $i }}" min="1" max="{{ $sisaTagih }}" value="0" disabled inputmode="numeric" aria-label="Nominal bayar">
                 </td>
-                <td><button type="button" class="btn-detail" onclick='showDetailModal(@json($tagih))'>Lihat</button></td>
                 <td>{{ $expLabel }}</td>
               </tr>
               @empty
@@ -487,11 +503,11 @@ h1{font-size:1.15rem}
               @else
                 <span class="badge badge-no-cicil">Tidak dicicil</span>
               @endif
-              <button type="button" class="btn-detail" onclick='showDetailModal(@json($tagih))'>Detail</button>
             </div>
             <h3>{{ ucwords(str_replace('_', ' ', strtolower($tagih['nama_tagihan']))) }}</h3>
             <p class="bill-amount">Rp {{ number_format($totalTagih, 0, ',', '.') }}</p>
             <div class="bill-meta">
+              <span>Periode {{ $fmtPeriode($tagih['periode'] ?? null) }}</span>
               <span>Sudah dibayar Rp {{ number_format($sudahBayar, 0, ',', '.') }}</span>
               <span>Sisa Rp {{ number_format($sisaTagih, 0, ',', '.') }}</span>
               <span>Exp Date {{ $expLabel }}</span>
@@ -903,6 +919,18 @@ function changeTagihanPerPage() { tagihanPerPageVal = parseInt(document.getEleme
 function changeLunasPerPage() { lunasPerPageVal = parseInt(document.getElementById('lunasPerPage').value); lunasPage = 1; lunasAll = false; initLunasPagination(); }
 function showAllTagihan() { tagihanAll = true; initTagihanPagination(); }
 function showAllLunas() { lunasAll = true; initLunasPagination(); }
+
+function formatPeriode(value) {
+  const raw = String(value || '').trim();
+  if (!raw || raw === '-') return '-';
+  const m = raw.match(/^(\d{4})[-]?(\d{2})/);
+  if (m) {
+    const names = ['Jan','Feb','Mar','Apr','Mei','Jun','Jul','Agu','Sep','Okt','Nov','Des'];
+    const bulan = parseInt(m[2], 10);
+    if (bulan >= 1 && bulan <= 12) return names[bulan - 1] + ' ' + m[1];
+  }
+  return raw;
+}
 
 function formatExpDate(value) {
   if (!value || String(value).indexOf('0000-00-00') === 0) return '-';
@@ -1444,8 +1472,8 @@ function showPaymentModal() {
     const readonly = cicil ? '' : 'readonly';
     rows += `<tr>
       <td>${billName(i.nama_tagihan)}</td>
-      <td>${esc(i.tahun_akademik_tagihan || i.periode || siswaBayar.tahun_akademik || '-')}</td>
-      <td>${esc(i.periode || '-')}</td>
+      <td>${esc(i.tahun_akademik_tagihan || siswaBayar.tahun_akademik || '-')}</td>
+      <td>${esc(formatPeriode(i.periode))}</td>
       <td class="cicil"><span class="badge ${cicil ? 'badge-cicil' : 'badge-no-cicil'}">${cicil ? 'Ya' : 'Tidak'}</span></td>
       <td class="num">${formatRp(i.total_tagihan)}</td>
       <td class="num">${formatRp(sudah)}</td>
