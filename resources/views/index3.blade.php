@@ -543,6 +543,7 @@ h1{font-size:1.15rem}
                 <th>No</th>
                 <th>Urutan</th>
                 <th>Nama tagihan</th>
+                <th>Periode</th>
                 <th>Nominal</th>
                 <th>Tgl bayar</th>
                 <th>Detail</th>
@@ -554,12 +555,13 @@ h1{font-size:1.15rem}
                 <td>{{ $i+1 }}</td>
                 <td>{{ $tagih['FURUTAN'] ?? '-' }}</td>
                 <td>{{ ucwords(str_replace('_', ' ', strtolower($tagih['nama_tagihan']))) }}</td>
+                <td>{{ $tagih['periode'] ?: '-' }}</td>
                 <td>Rp {{ number_format($tagih['total_tagihan'], 0, ',', '.') }}</td>
                 <td>{{ !empty($tagih['PAIDDT']) ? \Carbon\Carbon::parse($tagih['PAIDDT'])->format('Y-m-d') : '-' }}</td>
                 <td><button type="button" class="btn-detail" onclick="showLunasDetail({{ $i }})">Lihat</button></td>
               </tr>
               @empty
-              <tr><td colspan="6" class="empty-note">Tidak ada tagihan lunas</td></tr>
+              <tr><td colspan="7" class="empty-note">Tidak ada tagihan lunas</td></tr>
               @endforelse
             </tbody>
           </table>
@@ -574,6 +576,7 @@ h1{font-size:1.15rem}
             <h3>{{ ucwords(str_replace('_', ' ', strtolower($tagih['nama_tagihan']))) }}</h3>
             <p class="bill-amount">Rp {{ number_format($tagih['total_tagihan'], 0, ',', '.') }}</p>
             <div class="bill-meta">
+              <span>Periode {{ $tagih['periode'] ?: '-' }}</span>
               <span>Urutan {{ $tagih['FURUTAN'] ?? '-' }}</span>
               <span>Bayar {{ !empty($tagih['PAIDDT']) ? \Carbon\Carbon::parse($tagih['PAIDDT'])->format('d M Y') : '-' }}</span>
             </div>
@@ -605,7 +608,7 @@ h1{font-size:1.15rem}
     </div>
     <div class="modal-body">
       <div class="modal-row"><span class="modal-row-lbl">Nama tagihan</span><span class="modal-row-val" id="mNama"></span></div>
-      <div class="modal-row"><span class="modal-row-lbl">Tahun akademik</span><span class="modal-row-val" id="mTahun"></span></div>
+      <div class="modal-row" id="mTahunRow" hidden><span class="modal-row-lbl">Tahun akademik</span><span class="modal-row-val" id="mTahun"></span></div>
       <div class="modal-row"><span class="modal-row-lbl">Periode</span><span class="modal-row-val" id="mPeriode"></span></div>
       <div class="modal-row"><span class="modal-row-lbl">Tgl bayar</span><span class="modal-row-val" id="mPaidDt"></span></div>
       <div class="modal-row"><span class="modal-row-lbl">Exp Date</span><span class="modal-row-val" id="mExpDate"></span></div>
@@ -944,6 +947,8 @@ function earliestExpDate(items) {
 }
 
 function showLunasDetail(index) {
+  const tahunRow = document.getElementById('mTahunRow');
+  if (tahunRow) tahunRow.hidden = true;
   showDetailModal(tagihanLunas[index] || {});
 }
 
