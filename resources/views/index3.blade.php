@@ -408,22 +408,6 @@ h1{font-size:1.15rem}
           </div>
         </div>
         <div id="tagihanInfo" class="tbl-info" style="margin-bottom:.75rem"></div>
-        @php
-          $fmtPeriode = static function ($periode) {
-              $raw = trim((string) ($periode ?? ''));
-              if ($raw === '' || $raw === '-') {
-                  return '-';
-              }
-              if (preg_match('/^(\d{4})[-]?(\d{2})/', $raw, $m)) {
-                  $bulan = (int) $m[2];
-                  $nama = [1=>'Jan',2=>'Feb',3=>'Mar',4=>'Apr',5=>'Mei',6=>'Jun',7=>'Jul',8=>'Agu',9=>'Sep',10=>'Okt',11=>'Nov',12=>'Des'];
-                  if (isset($nama[$bulan])) {
-                      return $nama[$bulan] . ' ' . $m[1];
-                  }
-              }
-              return $raw;
-          };
-        @endphp
         <div class="tbl-wrap">
           <table>
             <thead>
@@ -433,7 +417,7 @@ h1{font-size:1.15rem}
                 <th>Nama tagihan</th>
                 <th>Periode</th>
                 <th>Nominal</th>
-                <th>Sudah dibayar</th>
+                <th>Sisa tagihan</th>
                 <th>Dapat dicicil</th>
                 <th>Bayar</th>
                 <th>Exp Date</th>
@@ -457,9 +441,9 @@ h1{font-size:1.15rem}
                 </td>
                 <td>{{ $i+1 }}</td>
                 <td>{{ ucwords(str_replace('_', ' ', strtolower($tagih['nama_tagihan']))) }}</td>
-                <td>{{ $fmtPeriode($tagih['periode'] ?? null) }}</td>
+                <td>{{ $tagih['periode'] ?: '-' }}</td>
                 <td>Rp {{ number_format($totalTagih, 0, ',', '.') }}</td>
-                <td>Rp {{ number_format($sudahBayar, 0, ',', '.') }}</td>
+                <td>Rp {{ number_format($sisaTagih, 0, ',', '.') }}</td>
                 <td>
                   @if($bolehCicil)
                     <span class="badge badge-cicil">Ya</span>
@@ -507,9 +491,8 @@ h1{font-size:1.15rem}
             <h3>{{ ucwords(str_replace('_', ' ', strtolower($tagih['nama_tagihan']))) }}</h3>
             <p class="bill-amount">Rp {{ number_format($totalTagih, 0, ',', '.') }}</p>
             <div class="bill-meta">
-              <span>Periode {{ $fmtPeriode($tagih['periode'] ?? null) }}</span>
-              <span>Sudah dibayar Rp {{ number_format($sudahBayar, 0, ',', '.') }}</span>
-              <span>Sisa Rp {{ number_format($sisaTagih, 0, ',', '.') }}</span>
+              <span>Periode {{ $tagih['periode'] ?: '-' }}</span>
+              <span>Sisa tagihan Rp {{ number_format($sisaTagih, 0, ',', '.') }}</span>
               <span>Exp Date {{ $expLabel }}</span>
             </div>
             <div class="bill-pay-row">
@@ -570,7 +553,7 @@ h1{font-size:1.15rem}
                 <td>{{ ucwords(str_replace('_', ' ', strtolower($tagih['nama_tagihan']))) }}</td>
                 <td>Rp {{ number_format($tagih['total_tagihan'], 0, ',', '.') }}</td>
                 <td>{{ !empty($tagih['PAIDDT']) ? \Carbon\Carbon::parse($tagih['PAIDDT'])->format('Y-m-d') : '-' }}</td>
-                <td><button type="button" class="btn-detail" onclick='showDetailModal(@json($tagih))'>Lihat</button></td>
+                <td><button type="button" class="btn-detail" onclick="showLunasDetail({{ $i }})">Lihat</button></td>
               </tr>
               @empty
               <tr><td colspan="6" class="empty-note">Tidak ada tagihan lunas</td></tr>
@@ -583,7 +566,7 @@ h1{font-size:1.15rem}
           <article class="bill-card" data-index="{{ $i }}">
             <div class="bill-card-top">
               <span class="badge badge-paid">Lunas</span>
-              <button type="button" class="btn-detail" onclick='showDetailModal(@json($tagih))'>Detail</button>
+              <button type="button" class="btn-detail" onclick="showLunasDetail({{ $i }})">Detail</button>
             </div>
             <h3>{{ ucwords(str_replace('_', ' ', strtolower($tagih['nama_tagihan']))) }}</h3>
             <p class="bill-amount">Rp {{ number_format($tagih['total_tagihan'], 0, ',', '.') }}</p>
@@ -620,6 +603,8 @@ h1{font-size:1.15rem}
     <div class="modal-body">
       <div class="modal-row"><span class="modal-row-lbl">Nama tagihan</span><span class="modal-row-val" id="mNama"></span></div>
       <div class="modal-row"><span class="modal-row-lbl">Tahun akademik</span><span class="modal-row-val" id="mTahun"></span></div>
+      <div class="modal-row"><span class="modal-row-lbl">Periode</span><span class="modal-row-val" id="mPeriode"></span></div>
+      <div class="modal-row"><span class="modal-row-lbl">Tgl bayar</span><span class="modal-row-val" id="mPaidDt"></span></div>
       <div class="modal-row"><span class="modal-row-lbl">Exp Date</span><span class="modal-row-val" id="mExpDate"></span></div>
       <div id="mDetailTable"></div>
     </div>
@@ -955,12 +940,30 @@ function earliestExpDate(items) {
   return dates.slice().sort()[0];
 }
 
+function showLunasDetail(index) {
+  showDetailModal(tagihanLunas[index] || {});
+}
+
 function showDetailModal(tagihan) {
   document.getElementById('mNama').textContent = tagihan.nama_tagihan ? tagihan.nama_tagihan.toLowerCase().replace(/_/g,' ').replace(/\b\w/g, l => l.toUpperCase()) : '-';
   document.getElementById('mTahun').textContent = tagihan.tahun_akademik_tagihan || '-';
+  const periodeEl = document.getElementById('mPeriode');
+  if (periodeEl) periodeEl.textContent = tagihan.periode || '-';
+  const paidEl = document.getElementById('mPaidDt');
+  if (paidEl) paidEl.textContent = formatExpDate(tagihan.PAIDDT || tagihan.paiddt || null);
   const expEl = document.getElementById('mExpDate');
   if (expEl) expEl.textContent = formatExpDate(expDateOf(tagihan));
-  const details = Array.isArray(tagihan.detail) ? tagihan.detail : [];
+  let details = Array.isArray(tagihan.detail) ? tagihan.detail.slice() : [];
+  if (!details.length && (tagihan.PAIDDT || tagihan.PAIDST === '1' || tagihan.paidst === '1')) {
+    details = [{
+      sumber: 'tran',
+      trxdate: tagihan.PAIDDT || tagihan.paiddt || '-',
+      metode: 'Lunas',
+      noreff: tagihan.periode || '-',
+      akun_detail: tagihan.nama_tagihan || 'Pembayaran',
+      nominal_detail: tagihan.total_tagihan || tagihan.sudah_dibayar || 0
+    }];
+  }
   const isTran = details.some(d => d.sumber === 'tran' || d.trxdate || d.TRXDATE);
   const th = 'padding:9px 12px;text-align:left;font-size:11px;font-weight:700;letter-spacing:.05em;color:var(--text3);text-transform:uppercase;border-bottom:1px solid var(--border)';
   const td = 'padding:9px 12px;border-bottom:1px solid var(--border);font-size:13px;color:var(--text)';
@@ -970,7 +973,7 @@ function showDetailModal(tagihan) {
     if (details.length) {
       details.forEach(d => {
         t += `<tr>
-          <td style="${td}">${esc(d.trxdate || d.TRXDATE || '-')}</td>
+          <td style="${td}">${esc(formatExpDate(d.trxdate || d.TRXDATE))}</td>
           <td style="${td}">${esc(d.metode || d.akun_detail || '-')}</td>
           <td style="${td}">${esc(d.noreff || d.transno || '-')}</td>
           <td style="${td};text-align:right;font-weight:650">Rp ${parseInt(d.nominal_detail||0).toLocaleString('id-ID')}</td>
@@ -1012,6 +1015,7 @@ document.getElementById('billForm').addEventListener('submit', e => {
 });
 
 const tagihanAktif = @json(isset($result['data']['tagihan']) ? $result['data']['tagihan'] : []);
+const tagihanLunas = @json(isset($result['data']['tagihan_lunas']) ? $result['data']['tagihan_lunas'] : []);
 const siswaBayar = {
   id: @json($result['data']['id'] ?? null),
   nama: @json($result['data']['nama'] ?? ''),

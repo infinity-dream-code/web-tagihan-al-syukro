@@ -370,7 +370,7 @@ class Tagihan
         }
 
         $custid = $siswa['id'];
-        $lunasItems = $this->attachLunasDetails($custid, $lunasItems);
+        $lunasItems = $this->attachLunasDetails($custid, $lunasItems, $num2nd);
 
         $siswa['tahun_dipilih'] = $tahun_akademik ?: 'Semua Tahun Akademik';
         $siswa['tagihan'] = $tagihanAktif;
@@ -429,14 +429,18 @@ class Tagihan
         return $items;
     }
 
-    private function attachLunasDetails($custid, array $items)
+    private function attachLunasDetails($custid, array $items, $nocust = null)
     {
         foreach ($items as &$item) {
             $item['detail'] = $this->fetchLunasDetails(
                 $item['CUSTID'] ?? $custid,
                 $item['AA'] ?? null,
                 $item['nama_tagihan'] ?? null,
-                $item['TRANSNO'] ?? null
+                $item['TRANSNO'] ?? null,
+                $item['BILLCD'] ?? null,
+                $item['periode'] ?? null,
+                $item,
+                $nocust
             );
         }
         unset($item);
@@ -501,57 +505,128 @@ class Tagihan
         return [];
     }
 
-    private function fetchLunasDetails($custid, $aa, $billnm, $transno)
+    private function fetchLunasDetails($custid, $aa, $billnm, $transno, $billcd = null, $periode = null, array $item = [], $nocust = null)
+    {
+        $billDetails = $this->fetchAktifDetails($custid, $billcd, $aa, $periode);
+        if ($billDetails) {
+            return $billDetails;
+        }
+
+        $tranDetails = $this->fetchLunasTranDetails($custid, $aa, $billnm, $transno, $billcd);
+        if ($tranDetails) {
+            return $tranDetails;
+        }
+
+        $vaDetails = $this->fetchLunasVaDetails($custid, $nocust, $aa);
+        if ($vaDetails) {
+            return $vaDetails;
+        }
+
+        $nominal = (int) ($item['total_tagihan'] ?? 0);
+        if ($nominal <= 0 && !empty($item['PAIDDT'])) {
+            $nominal = (int) ($item['sudah_dibayar'] ?? 0);
+        }
+
+        if ($nominal > 0 || !empty($item['PAIDDT'])) {
+            return [[
+                'sumber' => 'tran',
+                'akun_detail' => $item['nama_tagihan'] ?: 'Pembayaran',
+                'nominal_detail' => $nominal,
+                'trxdate' => $item['PAIDDT'] ?? null,
+                'metode' => 'Lunas',
+                'noreff' => $item['periode'] ?? null,
+                'transno' => $item['TRANSNO'] ?? null,
+            ]];
+        }
+
+        return [];
+    }
+
+    private function fetchLunasTranDetails($custid, $aa, $billnm, $transno, $billcd = null)
     {
         $attempts = [];
+        $select = "SELECT t.TRXDATE, t.METODE, t.DEBET, t.KREDIT, t.NOREFF, t.TRANSNO, t.BILLTARGET, t.INSTALLMENT FROM sccttran t";
 
         if ($aa !== null && $aa !== '') {
-            $attempts[] = [
-                'sql' => "SELECT t.TRXDATE, t.METODE, t.DEBET, t.KREDIT, t.NOREFF, t.TRANSNO, t.BILLTARGET, t.INSTALLMENT
-                    FROM sccttran t
-                    WHERE t.BILLID = ?
-                    ORDER BY t.TRXDATE DESC",
-                'params' => [$aa],
-            ];
+            $attempts[] = ['sql' => "$select WHERE t.BILLID = ? ORDER BY t.TRXDATE DESC", 'params' => [$aa]];
+            $attempts[] = ['sql' => "$select WHERE t.AA = ? ORDER BY t.TRXDATE DESC", 'params' => [$aa]];
         }
 
         if ($custid && $transno && (string) $transno !== '-') {
-            $attempts[] = [
-                'sql' => "SELECT t.TRXDATE, t.METODE, t.DEBET, t.KREDIT, t.NOREFF, t.TRANSNO, t.BILLTARGET, t.INSTALLMENT
-                    FROM sccttran t
-                    WHERE t.CUSTID = ? AND t.TRANSNO = ?
-                    ORDER BY t.TRXDATE DESC",
-                'params' => [$custid, $transno],
-            ];
+            $attempts[] = ['sql' => "$select WHERE t.CUSTID = ? AND t.TRANSNO = ? ORDER BY t.TRXDATE DESC", 'params' => [$custid, $transno]];
+        }
+
+        if ($custid && $billcd) {
+            $attempts[] = ['sql' => "$select WHERE t.CUSTID = ? AND t.BILLCD = ? ORDER BY t.TRXDATE DESC", 'params' => [$custid, $billcd]];
         }
 
         if ($custid && $billnm) {
-            $attempts[] = [
-                'sql' => "SELECT t.TRXDATE, t.METODE, t.DEBET, t.KREDIT, t.NOREFF, t.TRANSNO, t.BILLTARGET, t.INSTALLMENT
-                    FROM sccttran t
-                    WHERE t.CUSTID = ? AND UPPER(TRIM(t.BILLTARGET)) = UPPER(TRIM(?))
-                    ORDER BY t.TRXDATE DESC",
-                'params' => [$custid, $billnm],
-            ];
+            $attempts[] = ['sql' => "$select WHERE t.CUSTID = ? AND UPPER(TRIM(t.BILLTARGET)) = UPPER(TRIM(?)) ORDER BY t.TRXDATE DESC", 'params' => [$custid, $billnm]];
         }
 
         foreach ($attempts as $attempt) {
             $rows = $this->safeFetch($attempt['sql'], $attempt['params']);
             $details = [];
             foreach ($rows as $row) {
+                $row = array_change_key_case($row, CASE_UPPER);
                 $nominal = (int) ($row['DEBET'] ?? 0);
                 if ($nominal <= 0) {
                     $nominal = (int) ($row['KREDIT'] ?? 0);
                 }
                 $details[] = [
                     'sumber' => 'tran',
-                    'akun_detail' => $row['BILLTARGET'] ?: ($row['METODE'] ?: '-'),
+                    'akun_detail' => ($row['BILLTARGET'] ?? '') ?: ($row['METODE'] ?? '-'),
                     'nominal_detail' => $nominal,
                     'trxdate' => $row['TRXDATE'] ?? null,
                     'metode' => $row['METODE'] ?? null,
                     'noreff' => $row['NOREFF'] ?? null,
                     'transno' => $row['TRANSNO'] ?? null,
                     'installment' => $row['INSTALLMENT'] ?? null,
+                ];
+            }
+            if ($details) {
+                return $details;
+            }
+        }
+
+        return [];
+    }
+
+    private function fetchLunasVaDetails($custid, $nocust, $aa)
+    {
+        if ($aa === null || $aa === '') {
+            return [];
+        }
+
+        $attempts = [];
+        if ($custid) {
+            $attempts[] = ['sql' => "SELECT CREATED_AT, BILLAM, BILLTOT, NOVA, ArrayTagihan FROM scctva WHERE CUSTID = ? ORDER BY CREATED_AT DESC", 'params' => [$custid]];
+        }
+        if ($nocust) {
+            $attempts[] = ['sql' => "SELECT CREATED_AT, BILLAM, BILLTOT, NOVA, ArrayTagihan FROM scctva WHERE NOCUST = ? ORDER BY CREATED_AT DESC", 'params' => [$nocust]];
+        }
+
+        $aa = (string) $aa;
+        foreach ($attempts as $attempt) {
+            $rows = $this->safeFetch($attempt['sql'], $attempt['params']);
+            $details = [];
+            foreach ($rows as $row) {
+                $row = array_change_key_case($row, CASE_UPPER);
+                $ids = array_map('trim', explode(',', (string) ($row['ARRAYTAGIHAN'] ?? '')));
+                $ams = array_map('trim', explode(',', (string) ($row['BILLAM'] ?? '')));
+                $idx = array_search($aa, $ids, true);
+                if ($idx === false) {
+                    continue;
+                }
+                $nominal = isset($ams[$idx]) ? (int) $ams[$idx] : (int) ($row['BILLTOT'] ?? 0);
+                $details[] = [
+                    'sumber' => 'tran',
+                    'akun_detail' => 'Virtual Account',
+                    'nominal_detail' => $nominal,
+                    'trxdate' => $row['CREATED_AT'] ?? null,
+                    'metode' => 'VA',
+                    'noreff' => $row['NOVA'] ?? null,
+                    'transno' => $row['NOVA'] ?? null,
                 ];
             }
             if ($details) {
