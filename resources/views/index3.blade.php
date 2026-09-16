@@ -418,6 +418,7 @@ h1{font-size:1.15rem}
                 <th>Periode</th>
                 <th>Nominal</th>
                 <th>Sisa tagihan</th>
+                <th>Sudah dibayar</th>
                 <th>Dapat dicicil</th>
                 <th>Bayar</th>
                 <th>Exp Date</th>
@@ -444,6 +445,7 @@ h1{font-size:1.15rem}
                 <td>{{ $tagih['periode'] ?: '-' }}</td>
                 <td>Rp {{ number_format($totalTagih, 0, ',', '.') }}</td>
                 <td>Rp {{ number_format($sisaTagih, 0, ',', '.') }}</td>
+                <td>Rp {{ number_format($sudahBayar, 0, ',', '.') }}</td>
                 <td>
                   @if($bolehCicil)
                     <span class="badge badge-cicil">Ya</span>
@@ -457,7 +459,7 @@ h1{font-size:1.15rem}
                 <td>{{ $expLabel }}</td>
               </tr>
               @empty
-              <tr><td colspan="9" class="empty-note">Tidak ada data tersedia</td></tr>
+              <tr><td colspan="10" class="empty-note">Tidak ada data tersedia</td></tr>
               @endforelse
             </tbody>
           </table>
@@ -493,6 +495,7 @@ h1{font-size:1.15rem}
             <div class="bill-meta">
               <span>Periode {{ $tagih['periode'] ?: '-' }}</span>
               <span>Sisa tagihan Rp {{ number_format($sisaTagih, 0, ',', '.') }}</span>
+              <span>Sudah dibayar Rp {{ number_format($sudahBayar, 0, ',', '.') }}</span>
               <span>Exp Date {{ $expLabel }}</span>
             </div>
             <div class="bill-pay-row">
