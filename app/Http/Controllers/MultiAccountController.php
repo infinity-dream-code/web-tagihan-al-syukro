@@ -29,6 +29,7 @@ class MultiAccountController extends Controller
         if (!empty($result['data'])) {
             $nocust = $result['data']['no_cust'] ?? $result['data']['va_number'] ?? $fallback;
             $result['data']['va_number'] = TagihanController::formatNova($nocust);
+            $result = TagihanController::normalizeBillAmounts($result);
         }
 
         return $result;

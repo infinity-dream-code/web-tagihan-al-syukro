@@ -327,7 +327,7 @@ class Tagihan
 
         $selectCols = "
             b.AA, b.CUSTID, b.BILLCD, b.BILLNM AS nama_tagihan, b.BILLAM AS total_tagihan,
-            b.BILLPAID AS billpaid,
+            b.BILLPAID AS billpaid, b.PAYMENTLEFT AS paymentleft,
             b.BILLAC AS periode, b.BTA AS tahun_akademik_tagihan,
             b.FTGLTagihan, b.FURUTAN, b.isINSTALLABLE AS isINSTALLABLE,
             b.PAIDST, b.PAIDDT, b.ExpDate
@@ -386,8 +386,11 @@ class Tagihan
             $key = $row['AA'];
             if (!isset($grouped[$key])) {
                 $total = (int) $row['total_tagihan'];
-                $billpaid = (int) ($row['billpaid'] ?? $row['BILLPAID'] ?? 0);
-                $sudah = max(0, $total - $billpaid);
+                $sudah = max(0, (int) ($row['billpaid'] ?? $row['BILLPAID'] ?? 0));
+                $paymentLeft = $row['paymentleft'] ?? $row['PAYMENTLEFT'] ?? null;
+                $sisa = ($paymentLeft !== null && $paymentLeft !== '')
+                    ? max(0, (int) $paymentLeft)
+                    : max(0, $total - $sudah);
                 $grouped[$key] = [
                     'AA' => $row['AA'],
                     'BILLCD' => $row['BILLCD'],
@@ -400,7 +403,9 @@ class Tagihan
                     'isINSTALLABLE' => $this->flagInstallable($row),
                     'is_installment' => $this->flagInstallable($row),
                     'sudah_dibayar' => $sudah,
-                    'sisa_tagihan' => max(0, $total - $sudah),
+                    'sisa_tagihan' => $sisa,
+                    'billpaid' => $sudah,
+                    'paymentleft' => $sisa,
                     'PAIDST' => $row['PAIDST'],
                     'PAIDDT' => $row['PAIDDT'],
                     'ExpDate' => $row['ExpDate'] ?? null,

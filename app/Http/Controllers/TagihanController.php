@@ -191,6 +191,7 @@ class TagihanController extends Controller
         if (!empty($result['data'])) {
             $nocust = $result['data']['no_cust'] ?? $result['data']['va_number'] ?? $fallback;
             $result['data']['va_number'] = self::formatNova($nocust);
+            $result = self::normalizeBillAmounts($result);
         }
 
         return $result;
@@ -222,6 +223,44 @@ class TagihanController extends Controller
         }
 
         return $fallback;
+    }
+
+    public static function normalizeBillAmounts(array $result): array
+    {
+        foreach (['tagihan', 'tagihan_lunas'] as $key) {
+            if (empty($result['data'][$key]) || !is_array($result['data'][$key])) {
+                continue;
+            }
+
+            foreach ($result['data'][$key] as &$item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+
+                $total = (int) ($item['total_tagihan'] ?? 0);
+                $hasPaymentLeft = array_key_exists('paymentleft', $item) || array_key_exists('PAYMENTLEFT', $item);
+                $hasBillPaid = array_key_exists('billpaid', $item) || array_key_exists('BILLPAID', $item);
+
+                if ($hasPaymentLeft) {
+                    $sisa = max(0, (int) ($item['paymentleft'] ?? $item['PAYMENTLEFT']));
+                    $paid = $hasBillPaid
+                        ? max(0, (int) ($item['billpaid'] ?? $item['BILLPAID']))
+                        : max(0, $total - $sisa);
+                } elseif ($hasBillPaid) {
+                    $paid = max(0, (int) ($item['billpaid'] ?? $item['BILLPAID']));
+                    $sisa = max(0, $total - $paid);
+                } else {
+                    $paid = max(0, (int) ($item['sisa_tagihan'] ?? 0));
+                    $sisa = max(0, (int) ($item['sudah_dibayar'] ?? max(0, $total - $paid)));
+                }
+
+                $item['sudah_dibayar'] = $paid;
+                $item['sisa_tagihan'] = $sisa;
+            }
+            unset($item);
+        }
+
+        return $result;
     }
 
     public function tagihanView()
