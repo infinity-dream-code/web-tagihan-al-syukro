@@ -270,6 +270,11 @@ class TagihanController extends Controller
 
     public function buatVA(Request $request)
     {
+        return response()->json([
+            'status' => false,
+            'message' => 'Pembayaran tidak tersedia. Halaman ini hanya untuk melihat tagihan.',
+        ], 403);
+
         $request->validate([
             'custid' => 'required',
             'nocust' => 'required|string',

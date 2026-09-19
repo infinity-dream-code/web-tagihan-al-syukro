@@ -3,9 +3,9 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Cek &amp; Bayar Tagihan | Sidoarjo Raudhatul Jannah</title>
+<title>Cek Tagihan | Sidoarjo Raudhatul Jannah</title>
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<meta name="description" content="Cek dan bayar tagihan siswa Sidoarjo Raudhatul Jannah">
+<meta name="description" content="Cek tagihan siswa Sidoarjo Raudhatul Jannah">
 <meta name="theme-color" content="#14532d">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -283,6 +283,7 @@ h1{font-size:1.15rem}
 </style>
 </head>
 <body>
+@php $viewOnly = true; @endphp
 <div class="page-bg"></div>
 <div class="wrap">
   <div class="topbar">
@@ -290,7 +291,7 @@ h1{font-size:1.15rem}
       <img src="{{ asset('icon-jannah.jpeg') }}" alt="Sidoarjo Raudhatul Jannah" class="brand-logo">
       <div>
         <div class="brand">Sidoarjo Raudhatul Jannah</div>
-        <h1>Cek &amp; bayar tagihan</h1>
+        <h1>Cek tagihan</h1>
       </div>
     </div>
     <div class="topbar-actions">
@@ -412,15 +413,19 @@ h1{font-size:1.15rem}
           <table>
             <thead>
               <tr>
+                @unless($viewOnly)
                 <th><input type="checkbox" class="chk" id="selectAll" onclick="toggleSelectAll(this)" aria-label="Pilih semua"></th>
+                @endunless
                 <th>No</th>
                 <th>Nama tagihan</th>
                 <th>Periode</th>
                 <th>Nominal</th>
                 <th>Sisa tagihan</th>
                 <th>Sudah dibayar</th>
+                @unless($viewOnly)
                 <th>Dapat dicicil</th>
                 <th>Bayar</th>
+                @endunless
                 <th>Exp Date</th>
               </tr>
             </thead>
@@ -437,15 +442,18 @@ h1{font-size:1.15rem}
                   : '-';
               @endphp
               <tr data-index="{{ $i }}">
+                @unless($viewOnly)
                 <td>
                   <input type="checkbox" class="chk tagihan-checkbox" value="{{ $tagih['AA'] ?? '' }}" data-index="{{ $i }}" {{ $sisaTagih <= 0 ? 'disabled' : '' }} aria-label="Pilih tagihan">
                 </td>
+                @endunless
                 <td>{{ $i+1 }}</td>
                 <td>{{ ucwords(str_replace('_', ' ', strtolower($tagih['nama_tagihan']))) }}</td>
                 <td>{{ $tagih['periode'] ?: '-' }}</td>
                 <td>Rp {{ number_format($totalTagih, 0, ',', '.') }}</td>
                 <td>Rp {{ number_format($sisaTagih, 0, ',', '.') }}</td>
                 <td>Rp {{ number_format($sudahBayar, 0, ',', '.') }}</td>
+                @unless($viewOnly)
                 <td>
                   @if($bolehCicil)
                     <span class="badge badge-cicil">Ya</span>
@@ -456,17 +464,20 @@ h1{font-size:1.15rem}
                 <td>
                   <input type="number" class="pay-input bayar-input" data-index="{{ $i }}" min="1" max="{{ $sisaTagih }}" value="0" disabled inputmode="numeric" aria-label="Nominal bayar">
                 </td>
+                @endunless
                 <td>{{ $expLabel }}</td>
               </tr>
               @empty
-              <tr><td colspan="10" class="empty-note">Tidak ada data tersedia</td></tr>
+              <tr><td colspan="{{ $viewOnly ? 7 : 10 }}" class="empty-note">Tidak ada data tersedia</td></tr>
               @endforelse
             </tbody>
           </table>
         </div>
+        @unless($viewOnly)
         <label class="select-all-mobile">
           <input type="checkbox" class="chk" id="selectAllMobile" onclick="toggleSelectAll(this)"> Pilih semua
         </label>
+        @endunless
         <div class="card-list" id="tagihanCardList">
           @forelse($result['data']['tagihan'] as $i => $tagih)
           @php
@@ -481,6 +492,9 @@ h1{font-size:1.15rem}
           @endphp
           <article class="bill-card" data-index="{{ $i }}">
             <div class="bill-card-top">
+              @if($viewOnly)
+                <span class="badge badge-unpaid">Belum lunas</span>
+              @else
               <label class="bill-check">
                 <input type="checkbox" class="chk tagihan-checkbox" value="{{ $tagih['AA'] ?? '' }}" data-index="{{ $i }}" {{ $sisaTagih <= 0 ? 'disabled' : '' }}> Pilih
               </label>
@@ -488,6 +502,7 @@ h1{font-size:1.15rem}
                 <span class="badge badge-cicil">Bisa dicicil</span>
               @else
                 <span class="badge badge-no-cicil">Tidak dicicil</span>
+              @endif
               @endif
             </div>
             <h3>{{ ucwords(str_replace('_', ' ', strtolower($tagih['nama_tagihan']))) }}</h3>
@@ -498,10 +513,12 @@ h1{font-size:1.15rem}
               <span>Sudah dibayar Rp {{ number_format($sudahBayar, 0, ',', '.') }}</span>
               <span>Exp Date {{ $expLabel }}</span>
             </div>
+            @unless($viewOnly)
             <div class="bill-pay-row">
               <span class="bill-meta">Bayar</span>
               <input type="number" class="pay-input bayar-input" data-index="{{ $i }}" min="1" max="{{ $sisaTagih }}" value="0" disabled inputmode="numeric" aria-label="Nominal bayar">
             </div>
+            @endunless
           </article>
           @empty
           <div class="empty-note">Tidak ada data tersedia</div>
@@ -510,15 +527,19 @@ h1{font-size:1.15rem}
         <div id="tagihanPagination" class="pagination"></div>
 
         @if(!empty($result['data']['tagihan']))
-        <p class="pay-note">*Pilih tagihan yang akan dibayar. Yang tidak bisa dicicil harus dibayar sesuai sisa. Yang bisa dicicil, nominal bayar tidak boleh melebihi sisa tagihan.</p>
-        <div class="pay-summary" id="paySummary">
-          <span id="paySummaryText">0 tagihan dipilih</span>
-          <b id="paySummaryTotal">Rp 0</b>
-        </div>
-        <button type="button" class="pay-btn" id="btnBayar" onclick="showPaymentModal()">
-          <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
-          Bayar tagihan
-        </button>
+          @if($viewOnly)
+          <p class="pay-note" style="color:var(--text2)">Halaman ini hanya untuk melihat tagihan. Pembayaran tidak tersedia.</p>
+          @else
+          <p class="pay-note">*Pilih tagihan yang akan dibayar. Yang tidak bisa dicicil harus dibayar sesuai sisa. Yang bisa dicicil, nominal bayar tidak boleh melebihi sisa tagihan.</p>
+          <div class="pay-summary" id="paySummary">
+            <span id="paySummaryText">0 tagihan dipilih</span>
+            <b id="paySummaryTotal">Rp 0</b>
+          </div>
+          <button type="button" class="pay-btn" id="btnBayar" onclick="showPaymentModal()">
+            <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z"/></svg>
+            Bayar tagihan
+          </button>
+          @endif
         @endif
 
         <div class="divider"></div>
@@ -620,6 +641,7 @@ h1{font-size:1.15rem}
   </div>
 </div>
 
+@unless($viewOnly)
 <div id="paymentModal" class="modal-bg">
   <div class="modal-box pay-modal">
     <div class="modal-head">
@@ -632,6 +654,7 @@ h1{font-size:1.15rem}
     <div class="modal-foot" id="paymentFoot"></div>
   </div>
 </div>
+@endunless
 
 <div id="installModal" class="modal-bg">
   <div class="modal-box" style="max-width:420px">
@@ -1035,6 +1058,7 @@ const siswaBayar = {
   jenjang: @json($result['data']['jenjang'] ?? ''),
   saldo: @json($result['data']['saldo'] ?? 0)
 };
+const viewOnly = @json($viewOnly);
 const generateVaUrl = @json(route('generate-va'));
 const multiAkunTambahUrl = @json(route('multi-akun.tambah'));
 const multiAkunHapusUrl = @json(route('multi-akun.hapus'));
@@ -1445,6 +1469,10 @@ function swalTheme() {
 }
 
 function showPaymentModal() {
+  if (viewOnly) {
+    Swal.fire({ icon: 'info', title: 'Hanya melihat tagihan', text: 'Pembayaran tidak tersedia.', ...swalTheme() });
+    return;
+  }
   const selected = getSelectedTagihan();
   if (!selected.length) {
     Swal.fire({ icon: 'warning', title: 'Belum ada tagihan', text: 'Pilih minimal satu tagihan untuk dibayar.', ...swalTheme() });
@@ -1540,11 +1568,16 @@ function showPaymentModal() {
 }
 
 function closePaymentModal() {
-  document.getElementById('paymentModal').classList.remove('open');
+  const modal = document.getElementById('paymentModal');
+  if (modal) modal.classList.remove('open');
   document.body.style.overflow = '';
 }
 
 async function prosesPembayaran() {
+  if (viewOnly) {
+    Swal.fire({ icon: 'info', title: 'Hanya melihat tagihan', text: 'Pembayaran tidak tersedia.', ...swalTheme() });
+    return;
+  }
   const selected = getSelectedTagihan();
   const btn = document.getElementById('btnBuatVa');
   if (!selected.length) {
