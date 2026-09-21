@@ -68,16 +68,14 @@ class Tagihan
 
         $tagihanAA = implode(',', $ids);
         $billamStore = implode(',', $amounts);
-        $expDate = $this->earliestExpDate($ids);
 
-        $inserted = $this->doInsertVa($custid, $nocust, $namacust, $nocust, $tagihanAA, $billamStore, $billtot, $expDate);
+        $inserted = $this->doInsertVa($custid, $nocust, $namacust, $nocust, $tagihanAA, $billamStore, $billtot);
         if ($inserted) {
             $this->logVa('insertVA ok', [
                 'nova' => $nocust,
                 'arrayTagihan' => $tagihanAA,
                 'billam' => $billamStore,
                 'billtot' => $billtot,
-                'expDate' => $expDate,
             ]);
             return $nocust;
         }
@@ -154,36 +152,7 @@ class Tagihan
         return $cached;
     }
 
-    private function earliestExpDate(array $ids)
-    {
-        if (empty($ids)) {
-            return null;
-        }
-
-        $placeholders = implode(',', array_fill(0, count($ids), '?'));
-        try {
-            $stmt = $this->db->prepare("
-                SELECT MIN(ExpDate) AS exp_date
-                FROM scctbill
-                WHERE AA IN ($placeholders)
-                  AND ExpDate IS NOT NULL
-                  AND CAST(ExpDate AS CHAR) NOT LIKE '0000-00-00%'
-            ");
-            $stmt->execute(array_values($ids));
-            $row = $stmt->fetch(PDO::FETCH_ASSOC);
-            $val = $row['exp_date'] ?? null;
-            if (!$val || strpos((string) $val, '0000-00-00') === 0) {
-                return null;
-            }
-
-            return $val;
-        } catch (Exception $e) {
-            $this->logVa('earliestExpDate failed', ['error' => $e->getMessage(), 'ids' => $ids]);
-            return null;
-        }
-    }
-
-    private function doInsertVa($custid, $nocust, $namacust, $nova, $arrayTagihan, $billam, $billtot, $expDate = null)
+    private function doInsertVa($custid, $nocust, $namacust, $nova, $arrayTagihan, $billam, $billtot)
     {
         $params = [
             ':custid' => $custid,
@@ -196,22 +165,10 @@ class Tagihan
 
         $attempts = [
             [
-                'sql' => 'INSERT INTO scctva (CUSTID, NOCUST, NMCUST, NOVA, ArrayTagihan, BILLAM, BILLTOT, STATUS, CREATED_AT, ExpDate)
-                    VALUES (:custid, :nocust, :namacust, :nova, :arrayTagihan, :billam, :billtot, 1, NOW(), :expDate)',
-                'params' => $params + [':billtot' => $billtot, ':expDate' => $expDate],
-                'label' => 'BILLTOT+ExpDate',
-            ],
-            [
                 'sql' => 'INSERT INTO scctva (CUSTID, NOCUST, NMCUST, NOVA, ArrayTagihan, BILLAM, BILLTOT, STATUS, CREATED_AT)
                     VALUES (:custid, :nocust, :namacust, :nova, :arrayTagihan, :billam, :billtot, 1, NOW())',
                 'params' => $params + [':billtot' => $billtot],
                 'label' => 'BILLTOT',
-            ],
-            [
-                'sql' => 'INSERT INTO scctva (CUSTID, NOCUST, NMCUST, NOVA, ArrayTagihan, BILLAM, STATUS, CREATED_AT, ExpDate)
-                    VALUES (:custid, :nocust, :namacust, :nova, :arrayTagihan, :billam, 1, NOW(), :expDate)',
-                'params' => $params + [':expDate' => $expDate],
-                'label' => 'ExpDate',
             ],
             [
                 'sql' => 'INSERT INTO scctva (CUSTID, NOCUST, NMCUST, NOVA, ArrayTagihan, BILLAM, STATUS, CREATED_AT)
@@ -330,7 +287,7 @@ class Tagihan
             b.BILLPAID AS billpaid, b.PAYMENTLEFT AS paymentleft,
             b.BILLAC AS periode, b.BTA AS tahun_akademik_tagihan,
             b.FTGLTagihan, b.FURUTAN, b.isINSTALLABLE AS isINSTALLABLE,
-            b.PAIDST, b.PAIDDT, b.ExpDate
+            b.PAIDST, b.PAIDDT
         ";
 
         $sqlBelum = "
@@ -408,7 +365,6 @@ class Tagihan
                     'paymentleft' => $sisa,
                     'PAIDST' => $row['PAIDST'],
                     'PAIDDT' => $row['PAIDDT'],
-                    'ExpDate' => $row['ExpDate'] ?? null,
                     'CUSTID' => $row['CUSTID'] ?? null,
                     'TRANSNO' => $row['TRANSNO'] ?? null,
                     'detail' => []

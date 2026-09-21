@@ -98,7 +98,24 @@ class TagihanController extends Controller
                 ->post($this->wsUrl('cek-tagihan'), $payload);
         }
 
-        $result = $this->withNova($response->json(), $request->no_cust);
+        $json = $response->json();
+        if (!is_array($json)) {
+            Log::error('WS cek-tagihan-pw invalid response', [
+                'url' => $this->wsUrl('cek-tagihan-pw'),
+                'va' => $payload['va'],
+                'http_status' => $response->status(),
+                'body' => substr($response->body(), 0, 2000),
+            ]);
+        } else {
+            Log::info('WS cek-tagihan-pw response', [
+                'va' => $payload['va'],
+                'http_status' => $response->status(),
+                'status' => $json['status'] ?? null,
+                'message' => $json['message'] ?? null,
+            ]);
+        }
+
+        $result = $this->withNova($json, $request->no_cust);
 
         if (empty($result['status'])) {
             return back()->with([

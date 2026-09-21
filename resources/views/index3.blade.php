@@ -425,7 +425,6 @@ h1{font-size:1.15rem}
                 <th>Dapat dicicil</th>
                 <th>Bayar</th>
                 @endunless
-                <th>Exp Date</th>
               </tr>
             </thead>
             <tbody id="tagihanTableBody">
@@ -435,10 +434,6 @@ h1{font-size:1.15rem}
                 $sudahBayar = (int)($tagih['sudah_dibayar'] ?? 0);
                 $totalTagih = (int)($tagih['total_tagihan'] ?? 0);
                 $sisaTagih = (int)($tagih['sisa_tagihan'] ?? max(0, $totalTagih - $sudahBayar));
-                $expRaw = $tagih['ExpDate'] ?? $tagih['expdate'] ?? null;
-                $expLabel = (!empty($expRaw) && !str_starts_with((string) $expRaw, '0000-00-00'))
-                  ? \Carbon\Carbon::parse($expRaw)->format('Y-m-d')
-                  : '-';
               @endphp
               <tr data-index="{{ $i }}">
                 @unless($viewOnly)
@@ -464,10 +459,9 @@ h1{font-size:1.15rem}
                   <input type="number" class="pay-input bayar-input" data-index="{{ $i }}" min="1" max="{{ $sisaTagih }}" value="0" disabled inputmode="numeric" aria-label="Nominal bayar">
                 </td>
                 @endunless
-                <td>{{ $expLabel }}</td>
               </tr>
               @empty
-              <tr><td colspan="{{ $viewOnly ? 7 : 10 }}" class="empty-note">Tidak ada data tersedia</td></tr>
+              <tr><td colspan="{{ $viewOnly ? 6 : 9 }}" class="empty-note">Tidak ada data tersedia</td></tr>
               @endforelse
             </tbody>
           </table>
@@ -484,10 +478,6 @@ h1{font-size:1.15rem}
             $sudahBayar = (int)($tagih['sudah_dibayar'] ?? 0);
             $totalTagih = (int)($tagih['total_tagihan'] ?? 0);
             $sisaTagih = (int)($tagih['sisa_tagihan'] ?? max(0, $totalTagih - $sudahBayar));
-            $expRaw = $tagih['ExpDate'] ?? $tagih['expdate'] ?? null;
-            $expLabel = (!empty($expRaw) && !str_starts_with((string) $expRaw, '0000-00-00'))
-              ? \Carbon\Carbon::parse($expRaw)->format('Y-m-d')
-              : '-';
           @endphp
           <article class="bill-card" data-index="{{ $i }}">
             <div class="bill-card-top">
@@ -510,7 +500,6 @@ h1{font-size:1.15rem}
               <span>Periode {{ $tagih['periode'] ?: '-' }}</span>
               <span>Sisa tagihan Rp {{ number_format($sisaTagih, 0, ',', '.') }}</span>
               <span>Sudah dibayar Rp {{ number_format($sudahBayar, 0, ',', '.') }}</span>
-              <span>Exp Date {{ $expLabel }}</span>
             </div>
             @unless($viewOnly)
             <div class="bill-pay-row">
@@ -631,7 +620,6 @@ h1{font-size:1.15rem}
       <div class="modal-row" id="mTahunRow" hidden><span class="modal-row-lbl">Tahun akademik</span><span class="modal-row-val" id="mTahun"></span></div>
       <div class="modal-row"><span class="modal-row-lbl">Periode</span><span class="modal-row-val" id="mPeriode"></span></div>
       <div class="modal-row"><span class="modal-row-lbl">Tgl bayar</span><span class="modal-row-val" id="mPaidDt"></span></div>
-      <div class="modal-row"><span class="modal-row-lbl">Exp Date</span><span class="modal-row-val" id="mExpDate"></span></div>
       <div id="mDetailTable"></div>
     </div>
     <div class="modal-foot">
@@ -958,16 +946,6 @@ function formatExpDate(value) {
   return y + '-' + m + '-' + day;
 }
 
-function expDateOf(item) {
-  return item?.ExpDate || item?.exp_date || item?.expdate || null;
-}
-
-function earliestExpDate(items) {
-  const dates = (items || []).map(expDateOf).filter(v => v && String(v).indexOf('0000-00-00') !== 0);
-  if (!dates.length) return null;
-  return dates.slice().sort()[0];
-}
-
 function showLunasDetail(index) {
   const tahunRow = document.getElementById('mTahunRow');
   if (tahunRow) tahunRow.hidden = true;
@@ -981,8 +959,6 @@ function showDetailModal(tagihan) {
   if (periodeEl) periodeEl.textContent = tagihan.periode || '-';
   const paidEl = document.getElementById('mPaidDt');
   if (paidEl) paidEl.textContent = formatExpDate(tagihan.PAIDDT || tagihan.paiddt || null);
-  const expEl = document.getElementById('mExpDate');
-  if (expEl) expEl.textContent = formatExpDate(expDateOf(tagihan));
   let details = Array.isArray(tagihan.detail) ? tagihan.detail.slice() : [];
   if (!details.length && (tagihan.PAIDDT || tagihan.PAIDST === '1' || tagihan.paidst === '1')) {
     details = [{
@@ -1502,7 +1478,6 @@ function showPaymentModal() {
   }
 
   const total = selected.reduce((s, i) => s + (parseInt(i.bayar, 10) || 0), 0);
-  const minExp = earliestExpDate(selected);
   let rows = '';
   selected.forEach(i => {
     const cicil = isCicil(i);
@@ -1526,7 +1501,6 @@ function showPaymentModal() {
       <div><span class="pi-lbl">Kelas</span><div class="pi-val">${esc(siswaBayar.kelas) || '-'}</div></div>
       <div><span class="pi-lbl">NIS</span><div class="pi-val">${esc(siswaBayar.no_cust || siswaBayar.num2nd) || '-'}</div></div>
       <div><span class="pi-lbl">Nomor VA</span><div class="pi-val">${esc(formatNovaDisplay(siswaBayar.va_number || siswaBayar.no_cust)) || '-'}</div></div>
-      <div><span class="pi-lbl">Exp Date VA</span><div class="pi-val">${esc(formatExpDate(minExp))}</div></div>
     </div>
     <div class="pay-tbl-wrap">
       <table class="pay-tbl">
