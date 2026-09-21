@@ -5,7 +5,7 @@ if (!extension_loaded('gd')) {
     exit(1);
 }
 
-$src = dirname(__DIR__) . '/icon-jannah.jpeg';
+$src = dirname(__DIR__) . '/icon.png';
 $dir = __DIR__;
 
 if (!is_dir($dir)) {

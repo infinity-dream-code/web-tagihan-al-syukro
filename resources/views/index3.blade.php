@@ -3,18 +3,17 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Cek Tagihan | Sidoarjo Raudhatul Jannah</title>
+<title>Cek Tagihan | Al-Syukro</title>
 <meta name="csrf-token" content="{{ csrf_token() }}">
-<meta name="description" content="Cek tagihan siswa Sidoarjo Raudhatul Jannah">
+<meta name="description" content="Cek tagihan siswa Al-Syukro">
 <meta name="theme-color" content="#14532d">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="apple-mobile-web-app-title" content="Tagihan RJ">
+<meta name="apple-mobile-web-app-title" content="Al-Syukro">
 <link rel="manifest" href="{{ asset('manifest.webmanifest') }}">
-<link rel="icon" type="image/png" sizes="192x192" href="{{ asset('icons/icon-192.png') }}">
-<link rel="icon" type="image/jpeg" href="{{ asset('icon-jannah.jpeg') }}">
-<link rel="apple-touch-icon" href="{{ asset('icons/icon-192.png') }}">
+<link rel="icon" type="image/png" href="{{ asset('icon.png') }}">
+<link rel="apple-touch-icon" href="{{ asset('icon.png') }}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -288,9 +287,9 @@ h1{font-size:1.15rem}
 <div class="wrap">
   <div class="topbar">
     <div class="brand-wrap">
-      <img src="{{ asset('icon-jannah.jpeg') }}" alt="Sidoarjo Raudhatul Jannah" class="brand-logo">
+      <img src="{{ asset('icon.png') }}" alt="Al-Syukro" class="brand-logo">
       <div>
-        <div class="brand">Sidoarjo Raudhatul Jannah</div>
+        <div class="brand">Al-Syukro</div>
         <h1>Cek tagihan</h1>
       </div>
     </div>
@@ -616,7 +615,7 @@ h1{font-size:1.15rem}
     @endif
   @endif
 
-  <div class="footer">© {{ date('Y') }} Sidoarjo Raudhatul Jannah. All rights reserved.</div>
+  <div class="footer">© {{ date('Y') }} Al-Syukro. All rights reserved.</div>
 </div>
 
 <div id="detailModal" class="modal-bg">
@@ -666,8 +665,8 @@ h1{font-size:1.15rem}
     </div>
     <div class="modal-body">
       <div class="install-hero">
-        <img src="{{ asset('icons/icon-192.png') }}" alt="Tagihan RJ">
-        <h4>Tagihan RJ</h4>
+        <img src="{{ asset('icon.png') }}" alt="Al-Syukro">
+        <h4>Al-Syukro</h4>
         <p id="installModalText">Pasang aplikasi ke perangkat Anda agar lebih cepat dibuka dan mudah diakses.</p>
       </div>
     </div>

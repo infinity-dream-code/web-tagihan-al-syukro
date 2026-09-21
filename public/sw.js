@@ -1,14 +1,12 @@
-/* Tagihan RJ PWA service worker */
-const CACHE_VERSION = 'tagihan-rj-v1';
+/* Al-Syukro PWA service worker */
+const CACHE_VERSION = 'al-syukro-v1';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const OFFLINE_URL = '/offline.html';
 
 const PRECACHE_URLS = [
   OFFLINE_URL,
   '/manifest.webmanifest',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png',
-  '/icon-jannah.jpeg',
+  '/icon.png',
 ];
 
 self.addEventListener('install', (event) => {
