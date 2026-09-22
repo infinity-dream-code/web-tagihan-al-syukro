@@ -311,8 +311,8 @@ h1{font-size:1.15rem}
       <div class="section-title">Informasi akun</div>
       <div class="form-grid">
         <div class="field">
-          <label>Nomor virtual account <em>*</em></label>
-          <input type="text" name="no_cust" id="noCust" inputmode="numeric" autocomplete="username" placeholder="797766xxx" value="{{ old('no_cust', $va ?? '') }}" required>
+          <label>Nomor Induk Siswa <em>*</em></label>
+          <input type="text" name="no_cust" id="noCust" inputmode="numeric" autocomplete="username" placeholder="7977xxx" value="{{ old('no_cust', $va ?? '') }}" required>
         </div>
         <div class="field">
           <label>Password <em>*</em></label>
@@ -724,8 +724,8 @@ h1{font-size:1.15rem}
       <form id="multiAkunForm" onsubmit="return submitTambahMultiAkun(event)">
         @csrf
         <div class="field">
-          <label>Nomor virtual account <em>*</em></label>
-          <input type="text" name="no_cust" id="maNoCust" placeholder="797766xxx" required autocomplete="username">
+          <label>Nomor Induk Siswa <em>*</em></label>
+          <input type="text" name="no_cust" id="maNoCust" placeholder="7977xxx" required autocomplete="username">
         </div>
         <div class="field">
           <label>Password <em>*</em></label>
@@ -1293,9 +1293,9 @@ function formatRp(n) {
 function formatNovaDisplay(va) {
   let n = String(va ?? '').replace(/\s+/g, '');
   if (!n || n === '-') return '-';
-  n = n.replace(/^(757777|797766|751000)/, '');
+  n = n.replace(/^(797783|757777|797766|751000)/, '');
   n = n.replace(/^0+/, '') || n;
-  return n ? ('757777' + n) : '-';
+  return n ? ('797783' + n) : '-';
 }
 
 function esc(s) {
@@ -1617,7 +1617,7 @@ async function prosesPembayaran() {
           <div class="va-number" id="vaNumberText">${esc(va)}</div>
           <button type="button" class="btn-copy" onclick="copyVa()">Salin nomor VA</button>
           <p class="va-meta">Total: <b>${formatRp(total)}</b></p>
-          <p class="va-help">Bayar ke nomor VA di atas (kode bank 757777).</p>
+          <p class="va-help">Bayar ke nomor VA di atas (kode bank 797783).</p>
         </div>`;
       const actions = document.getElementById('payActions');
       if (actions) {

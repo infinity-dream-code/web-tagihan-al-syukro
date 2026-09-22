@@ -225,13 +225,18 @@ class Tagihan
 
     private function stripVa($va_number)
     {
-        foreach (['751000', '797766'] as $prefix) {
-            if (strpos((string) $va_number, $prefix) === 0) {
-                return substr($va_number, strlen($prefix));
+        $va_number = preg_replace('/\s+/', '', (string) $va_number);
+
+        foreach (['797783', '751000', '797766', '757777'] as $prefix) {
+            if (strpos($va_number, $prefix) === 0) {
+                $va_number = substr($va_number, strlen($prefix));
+                break;
             }
         }
 
-        return $va_number;
+        $trimmed = ltrim($va_number, '0');
+
+        return $trimmed !== '' ? $trimmed : $va_number;
     }
 
     private function getSiswaByVa($va_number)
