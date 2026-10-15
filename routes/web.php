@@ -80,6 +80,9 @@ Route::post('/multi-akun/tambah', [MultiAccountController::class, 'tambah'])->na
 Route::post('/multi-akun/switch', [MultiAccountController::class, 'switch'])->name('multi-akun.switch');
 Route::post('/multi-akun/hapus', [MultiAccountController::class, 'hapus'])->name('multi-akun.hapus');
 
+Route::post('/ubah-password', [TagihanController::class, 'ubahPassword'])->name('ubah-password');
+Route::get('/kuitansi', [TagihanController::class, 'kuitansi'])->name('kuitansi');
+
 Route::get('/tagihan/view', [TagihanController::class, 'tagihanView'])->name('tagihan.view');
 
 Route::post('/pembayaran/buat-va', [TagihanController::class, 'buatVA'])->name('pembayaran.buatva');

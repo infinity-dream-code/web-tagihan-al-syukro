@@ -483,6 +483,104 @@ class TagihanController extends Controller
         }
     }
 
+    public function ubahPassword(Request $request)
+    {
+        $request->validate([
+            'password_lama' => 'required|string',
+            'password_baru' => 'required|string|min:6|confirmed|different:password_lama',
+        ], [
+            'password_baru.min' => 'Password baru minimal 6 karakter',
+            'password_baru.confirmed' => 'Konfirmasi password baru tidak sama',
+            'password_baru.different' => 'Password baru harus berbeda dari password lama',
+        ]);
+
+        $noCust = session('tagihan.active_no_cust');
+        if (!$noCust) {
+            return response()->json([
+                'status' => false,
+                'message' => 'Sesi berakhir. Silakan login ulang.',
+            ], 401);
+        }
+
+        try {
+            $response = Http::timeout(30)
+                ->withoutVerifying()
+                ->acceptJson()
+                ->asJson()
+                ->post($this->wsUrl('ubah-password'), [
+                    'va' => $noCust,
+                    'password_lama' => $request->password_lama,
+                    'password_baru' => $request->password_baru,
+                ]);
+
+            $json = $response->json();
+            if (!is_array($json)) {
+                Log::error('WS ubah-password invalid response', [
+                    'va' => $noCust,
+                    'http_status' => $response->status(),
+                    'body' => substr($response->body(), 0, 2000),
+                ]);
+
+                return response()->json([
+                    'status' => false,
+                    'message' => 'Layanan ubah password belum tersedia',
+                ], 502);
+            }
+
+            return response()->json([
+                'status' => !empty($json['status']),
+                'message' => $json['message'] ?? (!empty($json['status']) ? 'Password berhasil diubah' : 'Gagal mengubah password'),
+            ]);
+        } catch (\Throwable $e) {
+            Log::error('Error ubah-password', ['error' => $e->getMessage()]);
+
+            return response()->json([
+                'status' => false,
+                'message' => 'Terjadi kesalahan saat mengubah password',
+            ], 500);
+        }
+    }
+
+    public function kuitansi(Request $request)
+    {
+        $noCust = session('tagihan.active_no_cust');
+        if (!$noCust) {
+            return redirect('/')->with('error', 'Sesi berakhir. Silakan login ulang.');
+        }
+
+        $response = Http::timeout(30)
+            ->withoutVerifying()
+            ->acceptJson()
+            ->asJson()
+            ->post($this->wsUrl('cek-tagihan'), [
+                'va' => $noCust,
+                'tahun_akademik' => 'all',
+            ]);
+
+        $result = $this->withNova($response->json(), $noCust);
+        if (empty($result['status']) || empty($result['data'])) {
+            abort(404, 'Data tagihan tidak ditemukan');
+        }
+
+        $ids = collect(explode(',', (string) $request->query('aa', '')))
+            ->map(fn ($id) => trim($id))
+            ->filter()
+            ->values();
+
+        $items = collect($result['data']['tagihan_lunas'] ?? [])
+            ->when($ids->isNotEmpty(), fn ($c) => $c->filter(fn ($item) => $ids->contains((string) ($item['AA'] ?? ''))))
+            ->values();
+
+        if ($items->isEmpty()) {
+            abort(404, 'Tagihan lunas tidak ditemukan');
+        }
+
+        return view('kuitansi', [
+            'siswa' => $result['data'],
+            'items' => $items,
+        ]);
+    }
+
     public function logout(Request $request)
     {
         $request->session()->forget('tagihan');

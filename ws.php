@@ -223,6 +223,28 @@ class Tagihan
         return $this->attachTagihan($siswa, $va_number, $tahun_akademik);
     }
 
+    public function ubahPassword($va_number, $passwordLama, $passwordBaru)
+    {
+        $num2nd = $this->stripVa($va_number);
+        if ($num2nd === '' || (string) $passwordBaru === '') {
+            return ['status' => false, 'message' => 'Data tidak lengkap'];
+        }
+
+        $stmtUser = $this->db->prepare("SELECT userlogin, kunci FROM sm_user WHERE userlogin = :userlogin LIMIT 1");
+        $stmtUser->execute([':userlogin' => $num2nd]);
+        $user = $stmtUser->fetch(PDO::FETCH_ASSOC);
+        if (!$user || $user['kunci'] !== sha1($passwordLama)) {
+            return ['status' => false, 'message' => 'Password lama salah'];
+        }
+
+        $stmt = $this->db->prepare("UPDATE sm_user SET kunci = :kunci WHERE userlogin = :userlogin");
+        $ok = $stmt->execute([':kunci' => sha1($passwordBaru), ':userlogin' => $num2nd]);
+
+        return $ok
+            ? ['status' => true, 'message' => 'Password berhasil diubah']
+            : ['status' => false, 'message' => 'Gagal menyimpan password baru'];
+    }
+
     private function stripVa($va_number)
     {
         $va_number = preg_replace('/\s+/', '', (string) $va_number);

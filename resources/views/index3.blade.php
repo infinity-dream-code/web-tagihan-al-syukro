@@ -247,6 +247,24 @@ html.dark .ma-success{background:#052e16;border-color:#14532d;color:#86efac}
 .siswa-head{display:flex;justify-content:space-between;align-items:center;gap:.65rem;margin-bottom:1.15rem;padding-bottom:.8rem;border-bottom:1px solid var(--border);flex-wrap:wrap}
 .siswa-head .section-title{margin:0;padding:0;border:none}
 .bill-pay-row{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:10px}
+.btn-detail-row{display:flex;gap:6px;flex-wrap:wrap}
+.guide-intro{font-size:13px;color:var(--text2);line-height:1.55;margin:0 0 .75rem}
+.guide-intro ol{margin:.4rem 0 0;padding-left:1.2rem}
+.guide-warn{padding:11px 13px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;font-size:13px;line-height:1.5;margin-bottom:1rem}
+html.dark .guide-warn{background:#431407;border-color:#7c2d12;color:#fdba74}
+.guide-va{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;background:var(--accent-soft);border:1px solid var(--border);margin-bottom:1rem}
+.guide-va .lbl{font-size:11px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:var(--text3)}
+.guide-va .num{font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:1.1rem;font-weight:700;color:var(--accent);word-break:break-all}
+.guide-sec{border:1px solid var(--border);border-radius:12px;margin-bottom:8px;background:var(--surface2);overflow:hidden}
+.guide-sec summary{cursor:pointer;padding:12px 14px;font-size:14px;font-weight:650;color:var(--text);list-style:none;display:flex;justify-content:space-between;align-items:center;gap:8px}
+.guide-sec summary::-webkit-details-marker{display:none}
+.guide-sec summary::after{content:'+';font-size:18px;color:var(--text3)}
+.guide-sec[open] summary::after{content:'−'}
+.guide-sec ol{margin:0;padding:0 14px 12px 32px;font-size:13px;color:var(--text2);line-height:1.6}
+.guide-sec li{margin-bottom:4px}
+.guide-sec .va-inline{display:inline-block;margin-top:3px;padding:2px 8px;border-radius:6px;background:var(--surface);border:1px solid var(--border2);font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-weight:700;color:var(--accent)}
+.btn-copy{min-height:36px;padding:6px 12px;border-radius:9px;border:1px solid var(--border2);background:var(--surface);color:var(--text2);font-size:12px;font-weight:600;cursor:pointer;flex-shrink:0}
+.btn-copy:hover{background:var(--surface2)}
 .footer{text-align:center;font-size:12px;color:var(--text3);margin-top:1.5rem;padding-bottom:.5rem}
 .scroll-top{position:fixed;bottom:max(1.15rem,env(safe-area-inset-bottom));right:max(1rem,env(safe-area-inset-right));width:44px;height:44px;border-radius:50%;border:1px solid var(--border2);background:var(--surface);color:var(--text2);display:flex;align-items:center;justify-content:center;cursor:pointer;box-shadow:0 8px 20px rgba(19,38,26,.12);z-index:20}
 .scroll-top:hover{background:var(--surface2)}
@@ -294,6 +312,10 @@ h1{font-size:1.15rem}
       </div>
     </div>
     <div class="topbar-actions">
+      <button class="theme-btn" onclick="openGuideModal()" type="button" aria-label="Tata cara pembayaran" title="Tata cara pembayaran">
+        <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+        <span class="theme-label">Cara bayar</span>
+      </button>
       <button class="theme-btn" onclick="toggleTheme()" id="themeBtn" type="button" aria-label="Ubah tema">
         <svg id="themeIcon" width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z"/></svg>
         <span class="theme-label" id="themeLabel">Mode gelap</span>
@@ -381,6 +403,7 @@ h1{font-size:1.15rem}
           <div class="section-title">Data siswa</div>
           <div class="tbl-controls">
             <button type="button" class="btn-logout" id="btnLogout" onclick="logoutAkun()">Logout</button>
+            <button type="button" class="btn-showall" id="btnUbahPassword" onclick="openPasswordModal()">Ubah password</button>
             <button type="button" class="btn-showall" id="btnMultiAkun" onclick="openMultiAkunModal()">Multi akun</button>
           </div>
         </div>
@@ -542,6 +565,9 @@ h1{font-size:1.15rem}
               <option value="100">100</option>
             </select>
             <button class="btn-showall" type="button" onclick="showAllLunas()">Tampilkan semua</button>
+            @if(!empty($result['data']['tagihan_lunas']))
+            <button class="btn-detail" type="button" onclick="cetakKuitansi()">Cetak semua kuitansi</button>
+            @endif
           </div>
         </div>
         <div id="lunasInfo" class="tbl-info" style="margin-bottom:.75rem"></div>
@@ -567,7 +593,12 @@ h1{font-size:1.15rem}
                 <td>{{ $tagih['periode'] ?: '-' }}</td>
                 <td>Rp {{ number_format($tagih['total_tagihan'], 0, ',', '.') }}</td>
                 <td>{{ !empty($tagih['PAIDDT']) ? \Carbon\Carbon::parse($tagih['PAIDDT'])->format('Y-m-d') : '-' }}</td>
-                <td><button type="button" class="btn-detail" onclick="showLunasDetail({{ $i }})">Lihat</button></td>
+                <td>
+                  <div class="btn-detail-row">
+                    <button type="button" class="btn-detail" onclick="showLunasDetail({{ $i }})">Lihat</button>
+                    <button type="button" class="btn-detail" onclick="cetakKuitansi({{ $i }})">Kuitansi</button>
+                  </div>
+                </td>
               </tr>
               @empty
               <tr><td colspan="7" class="empty-note">Tidak ada tagihan lunas</td></tr>
@@ -580,7 +611,10 @@ h1{font-size:1.15rem}
           <article class="bill-card" data-index="{{ $i }}">
             <div class="bill-card-top">
               <span class="badge badge-paid">Lunas</span>
-              <button type="button" class="btn-detail" onclick="showLunasDetail({{ $i }})">Detail</button>
+              <div class="btn-detail-row">
+                <button type="button" class="btn-detail" onclick="showLunasDetail({{ $i }})">Detail</button>
+                <button type="button" class="btn-detail" onclick="cetakKuitansi({{ $i }})">Kuitansi</button>
+              </div>
             </div>
             <h3>{{ ucwords(str_replace('_', ' ', strtolower($tagih['nama_tagihan']))) }}</h3>
             <p class="bill-amount">Rp {{ number_format($tagih['total_tagihan'], 0, ',', '.') }}</p>
@@ -622,11 +656,160 @@ h1{font-size:1.15rem}
       <div class="modal-row"><span class="modal-row-lbl">Tgl bayar</span><span class="modal-row-val" id="mPaidDt"></span></div>
       <div id="mDetailTable"></div>
     </div>
-    <div class="modal-foot">
+    <div class="modal-foot" style="display:flex;flex-direction:column;gap:8px">
+      <button class="btn-install-now" id="btnDetailKuitansi" onclick="cetakKuitansi(currentLunasIndex)" type="button" hidden>
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        Cetak kuitansi
+      </button>
       <button class="btn-close-full" onclick="closeDetailModal()" type="button">Tutup</button>
     </div>
   </div>
 </div>
+
+@php
+  $guideVa = (isset($result) && !empty($result['status']))
+    ? '96240 '.\App\Http\Controllers\TagihanController::normalizeVa($result['data']['no_cust'] ?? ($result['data']['va_number'] ?? ''))
+    : '96240 XXXXXXXXXXX';
+  $guideVaBlock = '<br><span class="va-inline">VA PEMBAYARAN '.e($guideVa).'</span>';
+  $guideStep = 'Periksa informasi pembayaran, pastikan VA sudah sesuai dengan informasi (cek info nama dan nama tagihan). Kesalahan transfer ke Virtual Account lain bukan tanggung jawab bagian keuangan.';
+  $guideNominal = 'Masukkan nominal sesuai dengan nominal yang tertampil (<b>Nominal Pembayaran + 2.000</b>).';
+@endphp
+<div id="guideModal" class="modal-bg">
+  <div class="modal-box" style="max-width:620px">
+    <div class="modal-head">
+      <h3>Tata cara pembayaran VA</h3>
+      <button class="modal-x" onclick="closeGuideModal()" aria-label="Tutup" type="button">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="guide-va">
+        <div>
+          <div class="lbl">VA pembayaran</div>
+          <div class="num" id="guideVaNumber">{{ $guideVa }}</div>
+        </div>
+        @if(isset($result) && !empty($result['status']))
+        <button type="button" class="btn-copy" onclick="copyText(@js(str_replace(' ', '', $guideVa)), 'Nomor VA sudah disalin.')">Salin</button>
+        @endif
+      </div>
+
+      <div class="guide-intro">
+        Top up melalui Virtual Account Al Syukro Universal dapat dilakukan melalui berbagai channel pembayaran, antara lain:
+        <ol>
+          <li>Bayar Tagihan Virtual Account BCA Syariah</li>
+          <li>Transfer Antar Bank via ATM</li>
+          <li>Transfer Antar Bank via Mobile Banking (Transfer Online)</li>
+          <li>Transfer melalui E-Wallet (Flip, Dana, OVO, Gopay, ShopeePay)</li>
+        </ol>
+      </div>
+
+      <div class="guide-warn">
+        Ketika melakukan pembayaran, <b>jangan lupa menambahkan nominal Rp 2.000</b> pada jumlah yang diketik atau dibayarkan <b>agar nominal pembayaran tidak terpotong</b>.
+      </div>
+
+      <details class="guide-sec" open>
+        <summary>Mobile Banking BCA Syariah (BSYA)</summary>
+        <ol>
+          <li>Login ke Mobile Banking BCA Syariah (BSYA).</li>
+          <li>Pilih menu "TRANSFER".</li>
+          <li>Pilih menu "TRANSFER KE VIRTUAL ACCOUNT".</li>
+          <li>Klik Transfer ke Tujuan Baru lalu pilih BCA Syariah.</li>
+          <li>Masukkan nomor "Virtual Account" pada kolom Nomor Virtual Account.{!! $guideVaBlock !!}</li>
+          <li>{{ $guideStep }}</li>
+          <li>{!! $guideNominal !!}</li>
+          <li>Masukkan PIN mobile banking Anda.</li>
+          <li>Konfirmasi pembayaran.</li>
+          <li>Simpan bukti transaksi sebagai bukti pembayaran.</li>
+        </ol>
+      </details>
+
+      <details class="guide-sec">
+        <summary>Mobile Banking selain BCA Syariah</summary>
+        <ol>
+          <li>Login ke Mobile Banking.</li>
+          <li>Pilih menu "TRANSFER".</li>
+          <li>Pilih "Transfer Antar Bank" dengan bank tujuan "BCA Syariah".</li>
+          <li>Masukkan nomor "Virtual Account" pada kolom Nomor Rekening.{!! $guideVaBlock !!}</li>
+          <li>{{ $guideStep }}</li>
+          <li>{!! $guideNominal !!}</li>
+          <li>Masukkan PIN mobile banking Anda.</li>
+          <li>Konfirmasi pembayaran.</li>
+          <li>Simpan bukti transaksi sebagai bukti pembayaran.</li>
+        </ol>
+      </details>
+
+      <details class="guide-sec">
+        <summary>ATM selain BCA</summary>
+        <ol>
+          <li>Masukkan kartu ATM, lalu ketik PIN Anda.</li>
+          <li>Pilih menu "TRANSFER BANK LAIN".</li>
+          <li>Masukkan kode BCA Syariah (<b>536</b>) dilanjut dengan 16 digit nomor "Virtual Account".{!! $guideVaBlock !!}</li>
+          <li>{{ $guideStep }}</li>
+          <li>Tekan "YA" jika setuju dengan informasi pembayaran.</li>
+          <li>{!! $guideNominal !!}</li>
+          <li>Kemudian tekan "BENAR".</li>
+          <li>Konfirmasi transaksi sukses.</li>
+          <li>Simpan struk ATM sebagai bukti pembayaran.</li>
+        </ol>
+      </details>
+
+      <details class="guide-sec">
+        <summary>E-Wallet (Flip, Dana, OVO, Gopay, ShopeePay)</summary>
+        <ol>
+          <li>Login ke E-Wallet.</li>
+          <li>Pilih menu "TRANSFER".</li>
+          <li>Pilih "Transfer Antar Bank" dengan bank tujuan "BCA Syariah".</li>
+          <li>Masukkan nomor "Virtual Account" pada kolom Nomor Rekening.{!! $guideVaBlock !!}</li>
+          <li>{{ $guideStep }}</li>
+          <li>{!! $guideNominal !!}</li>
+          <li>Masukkan PIN E-Wallet Anda.</li>
+          <li>Konfirmasi pembayaran.</li>
+          <li>Simpan bukti transaksi sebagai bukti pembayaran.</li>
+        </ol>
+      </details>
+    </div>
+    <div class="modal-foot">
+      <button class="btn-close-full" onclick="closeGuideModal()" type="button">Tutup</button>
+    </div>
+  </div>
+</div>
+
+@if(isset($result) && !empty($result['status']))
+<div id="passwordModal" class="modal-bg">
+  <div class="modal-box" style="max-width:440px">
+    <div class="modal-head">
+      <h3>Ubah password</h3>
+      <button class="modal-x" onclick="closePasswordModal()" aria-label="Tutup" type="button">
+        <svg width="18" height="18" fill="none" stroke="currentColor" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <form id="passwordForm" onsubmit="return submitUbahPassword(event)">
+      <div class="modal-body">
+        <div id="pwError" class="ma-error"></div>
+        <div class="field">
+          <label>Password lama <em>*</em></label>
+          <input type="password" id="pwLama" autocomplete="current-password" placeholder="Masukkan password lama" required>
+        </div>
+        <div class="field">
+          <label>Password baru <em>*</em></label>
+          <input type="password" id="pwBaru" autocomplete="new-password" minlength="6" placeholder="Minimal 6 karakter" required>
+        </div>
+        <div class="field" style="margin-bottom:.5rem">
+          <label>Ulangi password baru <em>*</em></label>
+          <input type="password" id="pwBaruKonfirmasi" autocomplete="new-password" minlength="6" placeholder="Ketik ulang password baru" required>
+        </div>
+        <label class="bill-check" style="margin-top:.35rem">
+          <input type="checkbox" class="chk" id="pwShow" onchange="togglePasswordFields(this.checked)"> Tampilkan password
+        </label>
+      </div>
+      <div class="modal-foot" style="display:flex;flex-direction:column;gap:8px">
+        <button type="submit" class="btn-install-now" id="pwSubmitBtn">Simpan password</button>
+        <button class="btn-close-full" onclick="closePasswordModal()" type="button">Batal</button>
+      </div>
+    </form>
+  </div>
+</div>
+@endif
 
 @unless($viewOnly)
 <div id="paymentModal" class="modal-bg">
@@ -946,10 +1129,124 @@ function formatExpDate(value) {
   return y + '-' + m + '-' + day;
 }
 
+let currentLunasIndex = null;
+
 function showLunasDetail(index) {
   const tahunRow = document.getElementById('mTahunRow');
   if (tahunRow) tahunRow.hidden = true;
+  currentLunasIndex = index;
+  const btn = document.getElementById('btnDetailKuitansi');
+  if (btn) btn.hidden = !tagihanLunas[index]?.AA;
   showDetailModal(tagihanLunas[index] || {});
+}
+
+function cetakKuitansi(index) {
+  const params = new URLSearchParams({ print: '1' });
+  if (index !== undefined && index !== null) {
+    const aa = tagihanLunas[index]?.AA;
+    if (!aa) {
+      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Data tagihan tidak lengkap untuk dicetak.', ...swalTheme() });
+      return;
+    }
+    params.set('aa', aa);
+  }
+  window.open(kuitansiUrl + '?' + params.toString(), '_blank');
+}
+
+function openGuideModal() {
+  document.getElementById('guideModal').classList.add('open');
+  document.body.style.overflow = 'hidden';
+}
+
+function closeGuideModal() {
+  document.getElementById('guideModal').classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function openPasswordModal() {
+  const modal = document.getElementById('passwordModal');
+  if (!modal) return;
+  document.getElementById('passwordForm').reset();
+  togglePasswordFields(false);
+  showPwError('');
+  modal.classList.add('open');
+  document.body.style.overflow = 'hidden';
+  setTimeout(() => document.getElementById('pwLama')?.focus(), 50);
+}
+
+function closePasswordModal() {
+  const modal = document.getElementById('passwordModal');
+  if (!modal) return;
+  modal.classList.remove('open');
+  document.body.style.overflow = '';
+}
+
+function togglePasswordFields(show) {
+  ['pwLama', 'pwBaru', 'pwBaruKonfirmasi'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.type = show ? 'text' : 'password';
+  });
+}
+
+function showPwError(msg) {
+  const el = document.getElementById('pwError');
+  if (!el) return;
+  el.textContent = msg || '';
+  el.classList.toggle('open', !!msg);
+}
+
+async function submitUbahPassword(e) {
+  e.preventDefault();
+  const lama = document.getElementById('pwLama').value;
+  const baru = document.getElementById('pwBaru').value;
+  const konfirmasi = document.getElementById('pwBaruKonfirmasi').value;
+  if (baru.length < 6) return showPwError('Password baru minimal 6 karakter'), false;
+  if (baru !== konfirmasi) return showPwError('Konfirmasi password baru tidak sama'), false;
+  if (baru === lama) return showPwError('Password baru harus berbeda dari password lama'), false;
+
+  const btn = document.getElementById('pwSubmitBtn');
+  btn.disabled = true;
+  btn.textContent = 'Menyimpan...';
+  showPwError('');
+  try {
+    const res = await fetch(ubahPasswordUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Accept': 'application/json',
+        'X-CSRF-TOKEN': csrfToken,
+        'X-Requested-With': 'XMLHttpRequest'
+      },
+      body: JSON.stringify({
+        password_lama: lama,
+        password_baru: baru,
+        password_baru_confirmation: konfirmasi
+      })
+    });
+    const data = await res.json().catch(() => ({}));
+    if (!res.ok || !data.status) {
+      showPwError(data.message || 'Gagal mengubah password');
+      return false;
+    }
+    closePasswordModal();
+    Swal.fire({ icon: 'success', title: 'Berhasil', text: data.message || 'Password berhasil diubah. Gunakan password baru saat login berikutnya.', ...swalTheme() });
+  } catch (err) {
+    showPwError('Terjadi kesalahan jaringan');
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Simpan password';
+  }
+  return false;
+}
+
+function copyText(text, message) {
+  if (!text) return;
+  const done = () => Swal.fire({ icon: 'success', title: 'Tersalin', text: message || 'Teks sudah disalin.', timer: 1400, showConfirmButton: false, ...swalTheme() });
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
 }
 
 function showDetailModal(tagihan) {
@@ -1014,6 +1311,8 @@ window.addEventListener('click', e => {
   if (e.target.id === 'paymentModal') closePaymentModal();
   if (e.target.id === 'multiAkunModal') closeMultiAkunModal();
   if (e.target.id === 'installModal') closeInstallModal();
+  if (e.target.id === 'guideModal') closeGuideModal();
+  if (e.target.id === 'passwordModal') closePasswordModal();
 });
 
 document.getElementById('billForm').addEventListener('submit', e => {
@@ -1037,6 +1336,8 @@ const viewOnly = @json($viewOnly);
 const generateVaUrl = @json(route('generate-va'));
 const multiAkunTambahUrl = @json(route('multi-akun.tambah'));
 const multiAkunHapusUrl = @json(route('multi-akun.hapus'));
+const ubahPasswordUrl = @json(route('ubah-password'));
+const kuitansiUrl = @json(route('kuitansi'));
 const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content') || '';
 let multiAkunAccounts = @json(isset($result) && !empty($result['status']) ? ($multiAccounts ?? []) : []);
 
