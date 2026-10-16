@@ -334,7 +334,7 @@ h1{font-size:1.15rem}
       <div class="form-grid">
         <div class="field">
           <label>Nomor Induk Siswa <em>*</em></label>
-          <input type="text" name="no_cust" id="noCust" inputmode="numeric" autocomplete="username" placeholder="96240xxx" value="{{ old('no_cust', $va ?? '') }}" required>
+          <input type="text" name="no_cust" id="noCust" inputmode="numeric" autocomplete="username" placeholder="9624000000012345" value="{{ old('no_cust', $va ?? '') }}" required>
         </div>
         <div class="field">
           <label>Password <em>*</em></label>
@@ -668,8 +668,8 @@ h1{font-size:1.15rem}
 
 @php
   $guideVa = (isset($result) && !empty($result['status']))
-    ? '96240 '.\App\Http\Controllers\TagihanController::normalizeVa($result['data']['no_cust'] ?? ($result['data']['va_number'] ?? ''))
-    : '96240 XXXXXXXXXXX';
+    ? \App\Http\Controllers\TagihanController::formatNova($result['data']['no_cust'] ?? ($result['data']['va_number'] ?? ''))
+    : '96240XXXXXXXXXXX';
   $guideVaBlock = '<br><span class="va-inline">VA PEMBAYARAN '.e($guideVa).'</span>';
   $guideStep = 'Periksa informasi pembayaran, pastikan VA sudah sesuai dengan informasi (cek info nama dan nama tagihan). Kesalahan transfer ke Virtual Account lain bukan tanggung jawab bagian keuangan.';
   $guideNominal = 'Masukkan nominal sesuai dengan nominal yang tertampil (<b>Nominal Pembayaran + 2.000</b>).';
@@ -908,7 +908,7 @@ h1{font-size:1.15rem}
         @csrf
         <div class="field">
           <label>Nomor Induk Siswa <em>*</em></label>
-          <input type="text" name="no_cust" id="maNoCust" placeholder="96240xxx" required autocomplete="username">
+          <input type="text" name="no_cust" id="maNoCust" placeholder="9624000000012345" required autocomplete="username">
         </div>
         <div class="field">
           <label>Password <em>*</em></label>
@@ -1596,7 +1596,9 @@ function formatNovaDisplay(va) {
   if (!n || n === '-') return '-';
   n = n.replace(/^(96240|797783|757777|797766|751000)/, '');
   n = n.replace(/^0+/, '') || n;
-  return n ? ('96240' + n) : '-';
+  if (!n) return '-';
+  // VA 16 digit: 96240 + NIS pad kiri 0 (11 digit) → mis. 12345 → 9624000000012345
+  return '96240' + n.padStart(11, '0');
 }
 
 function esc(s) {

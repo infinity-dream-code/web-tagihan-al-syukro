@@ -41,7 +41,9 @@ class TagihanController extends Controller
             return '-';
         }
 
-        return '96240'.$n;
+        // VA 16 digit: prefix 96240 (5) + NIS dipad kiri 0 sampai 11 digit
+        // contoh NIS 12345 → 9624000000012345
+        return '96240'.str_pad($n, 11, '0', STR_PAD_LEFT);
     }
 
     public function cek(Request $request)
