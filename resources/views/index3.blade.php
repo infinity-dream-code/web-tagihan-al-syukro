@@ -334,7 +334,7 @@ h1{font-size:1.15rem}
       <div class="form-grid">
         <div class="field">
           <label>Nomor Induk Siswa <em>*</em></label>
-          <input type="text" name="no_cust" id="noCust" inputmode="numeric" autocomplete="username" placeholder="9624000000012345" value="{{ old('no_cust', $va ?? '') }}" required>
+          <input type="text" name="no_cust" id="noCust" inputmode="numeric" autocomplete="username" placeholder="Masukkan Nomor Induk Siswa" value="{{ old('no_cust', $va ?? '') }}" required>
         </div>
         <div class="field">
           <label>Password <em>*</em></label>
@@ -908,7 +908,7 @@ h1{font-size:1.15rem}
         @csrf
         <div class="field">
           <label>Nomor Induk Siswa <em>*</em></label>
-          <input type="text" name="no_cust" id="maNoCust" placeholder="9624000000012345" required autocomplete="username">
+          <input type="text" name="no_cust" id="maNoCust" placeholder="Masukkan Nomor Induk Siswa" required autocomplete="username">
         </div>
         <div class="field">
           <label>Password <em>*</em></label>
