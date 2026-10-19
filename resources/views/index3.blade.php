@@ -410,7 +410,7 @@ h1{font-size:1.15rem}
         <div class="student-grid">
           <div class="sf"><label>Nama</label><p>{{ $result['data']['nama'] ?? '-' }}</p></div>
           <div class="sf"><label>Kelas</label><p>{{ $result['data']['kelas'] ?? '-' }}</p></div>
-          <div class="sf"><label>Angkatan</label><p>{{ ($academic_year ?? 'all') === 'all' ? 'Semua' : $academic_year }}</p></div>
+          <div class="sf"><label>Angkatan</label><p>{{ $result['data']['tahun_akademik'] ?: '-' }}</p></div>
           <div class="sf"><label>Saldo VA</label><p>Rp {{ number_format($result['data']['saldo'] ?? 0, 0, ',', '.') }}</p></div>
           <div class="sf"><label>NOVA</label><p>{{ $result['data']['va_number'] ?? '-' }}</p></div>
           <div class="sf"><label>Jenjang</label><p>{{ $result['data']['jenjang'] ?? '-' }}</p></div>
@@ -1328,7 +1328,7 @@ const siswaBayar = {
   no_cust: @json($result['data']['no_cust'] ?? ''),
   num2nd: @json($result['data']['num2nd'] ?? ''),
   va_number: @json($result['data']['va_number'] ?? ''),
-  tahun_akademik: @json($academic_year ?? ''),
+  tahun_akademik: @json($result['data']['tahun_akademik'] ?? ($academic_year ?? '')),
   jenjang: @json($result['data']['jenjang'] ?? ''),
   saldo: @json($result['data']['saldo'] ?? 0)
 };
