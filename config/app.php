@@ -17,6 +17,13 @@ return [
     */
 
     'name' => env('APP_NAME', 'Al-Syukro'),
+    'nama_instansi' => env('APP_NAMA_INSTANSI', 'AL SYUKRO UNIVERSAL'),
+    'alamat' => env('APP_ALAMAT', 'Jl. Otista Raya Gg. H. Maung No.30, Ciputat - Tangerang Selatan'),
+    'logo' => env('APP_LOGO', 'icon.png'),
+    'logo_dompet_dhuafa' => env('APP_LOGO_DOMPET_DHUAFA', 'logo-dompet-dhuafa.png'),
+    'logo_great_edunesia' => env('APP_LOGO_GREAT_EDUNESIA', 'great-edunesia.png'),
+    'ttd_kuitansi' => env('APP_TTD_KUITANSI', 'ttd.jpeg'),
+    'nama_ttd_kuitansi' => env('APP_NAMA_TTD_KUITANSI', 'Cut Tia Andani, S.Ak.'),
 
     /*
     |--------------------------------------------------------------------------

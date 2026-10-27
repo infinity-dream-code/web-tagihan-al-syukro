@@ -571,7 +571,13 @@ class TagihanController extends Controller
 
         $items = collect($result['data']['tagihan_lunas'] ?? [])
             ->when($ids->isNotEmpty(), fn ($c) => $c->filter(fn ($item) => $ids->contains((string) ($item['AA'] ?? ''))))
-            ->values();
+            ->values()
+            ->map(function ($item) {
+                if (empty($item['TRANSNO'])) {
+                    $item['TRANSNO'] = collect($item['detail'] ?? [])->pluck('transno')->filter()->first();
+                }
+                return $item;
+            });
 
         if ($items->isEmpty()) {
             abort(404, 'Tagihan lunas tidak ditemukan');
