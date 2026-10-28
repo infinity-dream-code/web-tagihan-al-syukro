@@ -62,11 +62,30 @@
         ?? $items->pluck('BILLCD')->filter()->first()
         ?? '-';
 
-    $logoSchool = asset(config('app.logo', 'icon.png'));
-    $logoEdunesia = asset(config('app.logo_great_edunesia', 'great-edunesia.png'));
-    $logoDompet = asset(config('app.logo_dompet_dhuafa', 'logo-dompet-dhuafa.png'));
-    $ttdFile = public_path(config('app.ttd_kuitansi', 'ttd.png'));
-    $ttdUrl = is_file($ttdFile) ? asset(config('app.ttd_kuitansi', 'ttd.png')) : null;
+    $publicSrc = function ($file, $fallbackMime = 'image/png') {
+        $file = ltrim((string) $file, '/');
+        $path = public_path($file);
+        if (is_file($path)) {
+            $ext = strtolower(pathinfo($path, PATHINFO_EXTENSION));
+            $mime = $ext === 'png' ? 'image/png' : ($ext === 'jpg' || $ext === 'jpeg' ? 'image/jpeg' : $fallbackMime);
+            return 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($path));
+        }
+        return '/' . $file;
+    };
+
+    $logoSchool = $publicSrc(config('app.logo', 'icon.png'));
+    $logoEdunesia = $publicSrc(config('app.logo_great_edunesia', 'great-edunesia.png'));
+    $logoDompet = $publicSrc(config('app.logo_dompet_dhuafa', 'logo-dompet-dhuafa.png'));
+    $ttdUrl = null;
+    foreach ([config('app.ttd_kuitansi', 'ttd.png'), 'ttd.png', 'ttd.jpeg'] as $ttdName) {
+        $ttdPath = public_path(ltrim((string) $ttdName, '/'));
+        if (is_file($ttdPath)) {
+            $ext = strtolower(pathinfo($ttdPath, PATHINFO_EXTENSION));
+            $mime = $ext === 'png' ? 'image/png' : 'image/jpeg';
+            $ttdUrl = 'data:' . $mime . ';base64,' . base64_encode(file_get_contents($ttdPath));
+            break;
+        }
+    }
     $namaTtd = config('app.nama_ttd_kuitansi', 'Cut Tia Andani, S.Ak.');
     $kelas = trim(($siswa['kelas'] ?? '') . ' ' . ($siswa['jurusan'] ?? '')) ?: '-';
 @endphp
