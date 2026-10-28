@@ -428,6 +428,9 @@ h1{font-size:1.15rem}
               <option value="100">100</option>
             </select>
             <button class="btn-showall" type="button" onclick="showAllTagihan()">Tampilkan semua</button>
+            @if(collect($result['data']['tagihan'] ?? [])->contains(fn ($t) => (int) ($t['sudah_dibayar'] ?? 0) > 0))
+            <button class="btn-detail" type="button" onclick="cetakKuitansiAktif()">Cetak kuitansi</button>
+            @endif
           </div>
         </div>
         <div id="tagihanInfo" class="tbl-info" style="margin-bottom:.75rem"></div>
@@ -444,6 +447,7 @@ h1{font-size:1.15rem}
                 <th>Nominal</th>
                 <th>Sisa tagihan</th>
                 <th>Sudah dibayar</th>
+                <th>Aksi</th>
                 @unless($viewOnly)
                 <th>Dapat dicicil</th>
                 <th>Bayar</th>
@@ -470,6 +474,11 @@ h1{font-size:1.15rem}
                 <td>Rp {{ number_format($totalTagih, 0, ',', '.') }}</td>
                 <td>Rp {{ number_format($sisaTagih, 0, ',', '.') }}</td>
                 <td>Rp {{ number_format($sudahBayar, 0, ',', '.') }}</td>
+                <td>
+                  @if($sudahBayar > 0)
+                    <button type="button" class="btn-detail" onclick="cetakKuitansi({{ $i }}, 'aktif')">Kuitansi</button>
+                  @endif
+                </td>
                 @unless($viewOnly)
                 <td>
                   @if($bolehCicil)
@@ -484,7 +493,7 @@ h1{font-size:1.15rem}
                 @endunless
               </tr>
               @empty
-              <tr><td colspan="{{ $viewOnly ? 6 : 9 }}" class="empty-note">Tidak ada data tersedia</td></tr>
+              <tr><td colspan="{{ $viewOnly ? 7 : 10 }}" class="empty-note">Tidak ada data tersedia</td></tr>
               @endforelse
             </tbody>
           </table>
@@ -524,6 +533,11 @@ h1{font-size:1.15rem}
               <span>Sisa tagihan Rp {{ number_format($sisaTagih, 0, ',', '.') }}</span>
               <span>Sudah dibayar Rp {{ number_format($sudahBayar, 0, ',', '.') }}</span>
             </div>
+            @if($sudahBayar > 0)
+            <div class="btn-detail-row" style="margin-top:.5rem">
+              <button type="button" class="btn-detail" onclick="cetakKuitansi({{ $i }}, 'aktif')">Kuitansi</button>
+            </div>
+            @endif
             @unless($viewOnly)
             <div class="bill-pay-row">
               <span class="bill-meta">Bayar</span>
@@ -1140,15 +1154,41 @@ function showLunasDetail(index) {
   showDetailModal(tagihanLunas[index] || {});
 }
 
-function cetakKuitansi(index) {
+function cetakKuitansiAktif() {
+  const aas = tagihanAktif
+    .filter(t => (parseInt(t?.sudah_dibayar, 10) || 0) > 0)
+    .map(t => t?.AA)
+    .filter(Boolean);
+  if (!aas.length) {
+    Swal.fire({ icon: 'info', title: 'Tidak ada kuitansi', text: 'Belum ada tagihan aktif yang dibayar atau dicicil.', ...swalTheme() });
+    return;
+  }
+  const params = new URLSearchParams({ print: '1', aa: [...new Set(aas)].join(',') });
+  window.open(kuitansiUrl + '?' + params.toString(), '_blank');
+}
+
+function cetakKuitansi(index, source) {
   const params = new URLSearchParams({ print: '1' });
   if (index !== undefined && index !== null) {
-    const aa = tagihanLunas[index]?.AA;
-    if (!aa) {
-      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Data tagihan tidak lengkap untuk dicetak.', ...swalTheme() });
+    const list = source === 'aktif' ? tagihanAktif : tagihanLunas;
+    const item = list[index] || {};
+    const aa = item.AA;
+    const paid = parseInt(item.sudah_dibayar, 10) || parseInt(item.billpaid, 10) || parseInt(item.BILLPAID, 10) || 0;
+    if (!aa || (source === 'aktif' && paid <= 0)) {
+      Swal.fire({ icon: 'error', title: 'Gagal', text: 'Kuitansi hanya untuk tagihan yang sudah dibayar atau pernah dicicil.', ...swalTheme() });
       return;
     }
     params.set('aa', aa);
+  } else {
+    const aas = [
+      ...tagihanLunas.map(t => t?.AA).filter(Boolean),
+      ...tagihanAktif.filter(t => (parseInt(t?.sudah_dibayar, 10) || 0) > 0).map(t => t?.AA).filter(Boolean),
+    ];
+    if (!aas.length) {
+      Swal.fire({ icon: 'info', title: 'Tidak ada kuitansi', text: 'Belum ada tagihan yang dibayar atau dicicil.', ...swalTheme() });
+      return;
+    }
+    params.set('aa', [...new Set(aas)].join(','));
   }
   window.open(kuitansiUrl + '?' + params.toString(), '_blank');
 }

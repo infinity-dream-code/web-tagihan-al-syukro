@@ -569,7 +569,15 @@ class TagihanController extends Controller
             ->filter()
             ->values();
 
-        $items = collect($result['data']['tagihan_lunas'] ?? [])
+        $lunas = collect($result['data']['tagihan_lunas'] ?? []);
+        $aktifDibayar = collect($result['data']['tagihan'] ?? [])
+            ->filter(function ($item) {
+                $paid = (int) ($item['sudah_dibayar'] ?? $item['billpaid'] ?? $item['BILLPAID'] ?? 0);
+                return $paid > 0;
+            });
+
+        $items = $lunas->concat($aktifDibayar)
+            ->unique(fn ($item) => (string) ($item['AA'] ?? ''))
             ->when($ids->isNotEmpty(), fn ($c) => $c->filter(fn ($item) => $ids->contains((string) ($item['AA'] ?? ''))))
             ->values()
             ->map(function ($item) {
@@ -580,7 +588,7 @@ class TagihanController extends Controller
             });
 
         if ($items->isEmpty()) {
-            abort(404, 'Tagihan lunas tidak ditemukan');
+            abort(404, 'Kuitansi tidak ditemukan. Tagihan belum pernah dibayar.');
         }
 
         return view('kuitansi', [
