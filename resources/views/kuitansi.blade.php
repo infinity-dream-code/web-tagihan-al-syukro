@@ -65,8 +65,8 @@
     $logoSchool = asset(config('app.logo', 'icon.png'));
     $logoEdunesia = asset(config('app.logo_great_edunesia', 'great-edunesia.png'));
     $logoDompet = asset(config('app.logo_dompet_dhuafa', 'logo-dompet-dhuafa.png'));
-    $ttdFile = public_path(config('app.ttd_kuitansi', 'ttd.jpeg'));
-    $ttdUrl = is_file($ttdFile) ? asset(config('app.ttd_kuitansi', 'ttd.jpeg')) : null;
+    $ttdFile = public_path(config('app.ttd_kuitansi', 'ttd.png'));
+    $ttdUrl = is_file($ttdFile) ? asset(config('app.ttd_kuitansi', 'ttd.png')) : null;
     $namaTtd = config('app.nama_ttd_kuitansi', 'Cut Tia Andani, S.Ak.');
     $kelas = trim(($siswa['kelas'] ?? '') . ' ' . ($siswa['jurusan'] ?? '')) ?: '-';
 @endphp
