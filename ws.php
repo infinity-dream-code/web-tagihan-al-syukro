@@ -334,7 +334,7 @@ class Tagihan
         $sqlLunas = "
         SELECT $selectCols
         FROM scctbill b
-        WHERE $baseFilter AND b.PAIDST = '1'
+        WHERE $baseFilter AND b.PAIDST = '1' AND b.FSTSBolehBayar = '1'
         ORDER BY b.PAIDDT DESC, b.FURUTAN ASC
     ";
         $stmtLunas = $this->db->prepare($sqlLunas);
